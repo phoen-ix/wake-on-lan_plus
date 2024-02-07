@@ -1,310 +1,344 @@
-<?php //
-/* 
+<?php
+/**
  * PHPWOL - Send wake on lan magic packet from php.
  * PHP Version 5.6.28
- * @package PHPWOL
- * @see https://github.com/andishfr/wake-on-lan.php/ GitHub project
- * @author Andreas Schaefer <asc@schaefer-it.net>
+
+ * @package   PHPWOL
+ * @author    Andreas Schaefer <asc@schaefer-it.net>
  * @copyright 2021 Andreas Schaefer
- * @license https://github.com/AndiSHFR/wake-on-lan.php/blob/master/LICENSE MIT License
- * @note This program is distributed in the hope that it will be useful - WITHOUT
+ * @license   https://github.com/AndiSHFR/wake-on-lan.php/blob/master/LICENSE MIT License
+ * @see       https://github.com/andishfr/wake-on-lan.php/ GitHub project
+ * @note      This program is distributed in the hope that it will be useful - WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-
- /**
-  * Wake On Lan function.
-  *
-	* @param string      $mac         The mac address of the host to wake
-	* @param string      $ip          The hostname or ip address of the host to wake
-	* @param string      $cidr        The cidr of the subnet to send to the broadcast address
-	* @param string      $port        The udp port to send the packet to
-  *
-	* @return bool|string             false  = No error occured, string = Error message
-	*/
-  function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut) {
+/**
+ * Wake On Lan function.
+ *
+ * @param string $mac  The mac address of the host to wake
+ * @param string $ip   The hostname or ip address of the host to wake
+ * @param string $cidr The cidr of the subnet to send to the broadcast address
+ * @param string $port The udp port to send the packet to
+ *
+ * @return bool|string             false  = No error occured, string = Error message
+ */
+function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut)
+{
     // Initialize the result. If FALSE then everything went ok.
     $wolResult = false;
     // Initialize the debug output return
-    $debugOut = [];  
+    $debugOut = [];
     // Initialize the magic packet
-    $magicPacket = str_repeat(chr(0xFF), 6);
-        
-    $debugOut[] = __LINE__ . " : wakeupOnLan('$mac', '$ip', '$cidr', '$port' );"; 
-    
+    $magicPacket = str_repeat(chr(0xff), 6);
+
+    $debugOut[] = __LINE__ . " : wakeupOnLan('$mac', '$ip', '$cidr', '$port' );";
+
     // Test if socket support is available
-    if(!$wolResult && !extension_loaded('sockets')) {
-      $wolResult = 'Error: Extension <strong>php_sockets</strong> is not loaded! You need to enable it in <strong>php.ini</strong>';
-      $debugOut[] = __LINE__ . ' : ' . $wolResult;
+    if (!$wolResult && !extension_loaded("sockets")) {
+        $wolResult = "Error: Extension <strong>php_sockets</strong> is not loaded! You need to enable it in <strong>php.ini</strong>";
+        $debugOut[] = __LINE__ . " : " . $wolResult;
     }
-  
-    // Test if UDP datagramm support is avalable	
-    if(!array_search('udp', stream_get_transports())) {
-      $wolResult = 'Error: Cannot send magic packet! Tranport UDP is not supported on this system.';
-      $debugOut[] = __LINE__ . ' : ' . $wolResult;
+
+    // Test if UDP datagramm support is avalable
+    if (!array_search("udp", stream_get_transports())) {
+        $wolResult = "Error: Cannot send magic packet! Tranport UDP is not supported on this system.";
+        $debugOut[] = __LINE__ . " : " . $wolResult;
     }
-  
+
     // Validate the mac address
-    if(!$wolResult) {
-      $debug[] = __LINE__ . ' : Validating mac address: ' . $mac; 
-      $mac = str_replace(':','-',strtoupper($mac));
-      $debugOut[] = __LINE__ . ' : MAC = ' . $mac;
-  
-      if ((!preg_match("/([A-F0-9]{2}[-]){5}([0-9A-F]){2}/",$mac)) || (strlen($mac) != 17)) {
-        $wolResult = 'Error: Invalid MAC-address: ' . $mac;
-        $debugOut[] = __LINE__ . ' : ' . $wolResult;
-      }
+    if (!$wolResult) {
+        $debug[] = __LINE__ . " : Validating mac address: " . $mac;
+        $mac = str_replace(":", "-", strtoupper($mac));
+        $debugOut[] = __LINE__ . " : MAC = " . $mac;
+
+        if (!preg_match("/([A-F0-9]{2}[-]){5}([0-9A-F]){2}/", $mac)
+            || strlen($mac) != 17
+        ) {
+            $wolResult = "Error: Invalid MAC-address: " . $mac;
+            $debugOut[] = __LINE__ . " : " . $wolResult;
+        }
     }
-  
+
     // Finish the magic packet
-    if(!$wolResult) {
-      $debugOut[] = __LINE__ . ' : Creating the magic paket'; 
-      $hwAddress = '';
-      foreach( explode('-', $mac) as $addressByte) {
-        $hwAddress .= chr(hexdec($addressByte)); 
-      }
-      $magicPacket .= str_repeat($hwAddress, 16);
+    if (!$wolResult) {
+        $debugOut[] = __LINE__ . " : Creating the magic paket";
+        $hwAddress = "";
+        foreach (explode("-", $mac) as $addressByte) {
+            $hwAddress .= chr(hexdec($addressByte));
+        }
+        $magicPacket .= str_repeat($hwAddress, 16);
     }
-      
+
     // Resolve the hostname if not an ip address
-    if(!$wolResult && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ) {
-      $debugOut[] = __LINE__ . ' : Resolving host :' . $ip;
-      $tmpIp = gethostbyname($ip);
-      if($ip==$tmpIp) {
-        $wolResult = 'Error: Cannot resolve hostname "' . $ip . '".';
-        $debugOut[] = __LINE__ . ' : ' . $wolResult;
-      } else {
-        $ip = $tmpIp; // Use the ip address
-      }
+    if (!$wolResult && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $debugOut[] = __LINE__ . " : Resolving host :" . $ip;
+        $tmpIp = gethostbyname($ip);
+        if ($ip == $tmpIp) {
+            $wolResult = 'Error: Cannot resolve hostname "' . $ip . '".';
+            $debugOut[] = __LINE__ . " : " . $wolResult;
+        } else {
+            $ip = $tmpIp; // Use the ip address
+        }
     }
-      
+
     // If $cidr is not empty we will use the broadcast address rather than the supplied ip address
-    if(!$wolResult && '' != $cidr ) {
-      $debugOut[] = __LINE__ . ' : CIDR is set to ' . $cidr . '. Will use broadcast address.';
-      $cidr = intval($cidr);
-      if($cidr < 0 || $cidr > 32) {
-        $wolResult = 'Error: Invalid subnet size of ' . $cidr . '. CIDR must be between 0 and 32.';
-        $debugOut[] = __LINE__ . ' : ' . $wolResult;			
-      } else {
-        // Create the bitmask long from the cidr value
-        $netMask = -1 << (32 - (int)$cidr);
-        // Create the network address from the long of the ip and the network bitmask
-        $networkAddress = ip2long($ip) & $netMask; 
-        // Calulate the size fo the network (number of ip addresses in the subnet)
-        $networkSize = pow(2, (32 - $cidr));
-        // Calculate the broadcast address of the network by adding the network size to the network address
-        $broadcastAddress = $networkAddress + $networkSize - 1;
-  
-        $debugOut[] = __LINE__ . ' : $netMask = ' . long2ip($netMask);
-        $debugOut[] = __LINE__ . ' : $networkAddress = ' . long2ip($networkAddress);
-        $debugOut[] = __LINE__ . ' : $networkSize = ' . $networkSize;
-        $debugOut[] = __LINE__ . ' : $broadcastAddress = ' . long2ip($broadcastAddress);
-  
-        // Create the braodcast address from the long value and use this ip
-        $ip = long2ip($broadcastAddress);
-      }
+    if (!$wolResult && "" != $cidr) {
+        $debugOut[] = __LINE__ . " : CIDR is set to " . $cidr . ". Will use broadcast address.";
+        $cidr = intval($cidr);
+        if ($cidr < 0 || $cidr > 32) {
+            $wolResult = "Error: Invalid subnet size of " . $cidr . ". CIDR must be between 0 and 32.";
+            $debugOut[] = __LINE__ . " : " . $wolResult;
+        } else {
+            // Create the bitmask long from the cidr value
+            $netMask = -1 << 32 - (int) $cidr;
+            // Create the network address from the long of the ip and the network bitmask
+            $networkAddress = ip2long($ip) & $netMask;
+            // Calulate the size fo the network (number of ip addresses in the subnet)
+            $networkSize = pow(2, 32 - $cidr);
+            // Calculate the broadcast address of the network by adding the network size to the network address
+            $broadcastAddress = $networkAddress + $networkSize - 1;
+
+            $debugOut[] = __LINE__ . ' : $netMask = ' . long2ip($netMask);
+            $debugOut[] = __LINE__ . ' : $networkAddress = ' . long2ip($networkAddress);
+            $debugOut[] = __LINE__ . ' : $networkSize = ' . $networkSize;
+            $debugOut[] = __LINE__ . ' : $broadcastAddress = ' . long2ip($broadcastAddress);
+
+            // Create the braodcast address from the long value and use this ip
+            $ip = long2ip($broadcastAddress);
+        }
     }
-  
+
     // Validate the udp port
-    if(!$wolResult && '' != $port ) {
-      $port = intval($port);
-      if($port < 0 || $port > 65535 ) {
-        $wolResult = 'Error: Invalid port value of ' . $port . '. Port must between 1 and 65535.';
-        $debugOut[] = __LINE__ . ' : ' . $wolResult;			
-      }
-    }		
-            
-      // Can we work with socket_create/socket_sendto/socket_close?
-      if(!$wolResult && function_exists('socket_create') ) {
-      
-        $debug[] = __LINE__ . ' : Calling socket_create(AF_INET, SOCK_DGRAM, SOL_UDP)';														
+    if (!$wolResult && "" != $port) {
+        $port = intval($port);
+        if ($port < 0 || $port > 65535) {
+            $wolResult = "Error: Invalid port value of " . $port . ". Port must between 1 and 65535.";
+            $debugOut[] = __LINE__ . " : " . $wolResult;
+        }
+    }
+
+    // Can we work with socket_create/socket_sendto/socket_close?
+    if (!$wolResult && function_exists("socket_create")) {
+        $debug[] = __LINE__ . " : Calling socket_create(AF_INET, SOCK_DGRAM, SOL_UDP)";
         // Create the socket
         $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP); // IPv4 udp datagram socket
-        if(!$socket) {				
-          $errno = socket_last_error();
-          $wolResult = 'Error: ' . $errno . ' - ' . socket_strerror($errno); 
-          $debug[] = __LINE__ . ' : ' . $wolResult;																
+        if (!$socket) {
+            $errno = socket_last_error();
+            $wolResult = "Error: " . $errno . " - " . socket_strerror($errno);
+            $debug[] = __LINE__ . " : " . $wolResult;
         }
-  
-        if(!$wolResult) {
-          $debug[] = __LINE__ . ' : Calling socket_set_option($socket, SOL_SOCKET, SO_BROADCAST, true)';																	
-          // Set socket options
-          $socketResult = socket_set_option($socket, SOL_SOCKET, SO_BROADCAST, true);
-          if(0 >= $socketResult) {
-            $wolResult = 'Error: ' . socket_strerror($socketResult); 
-            $debug[] = __LINE__ . ' : ' . $wolResult;													
-          }
+
+        if (!$wolResult) {
+            $debug[] = __LINE__ . ' : Calling socket_set_option($socket, SOL_SOCKET, SO_BROADCAST, true)';
+            // Set socket options
+            $socketResult = socket_set_option(
+                $socket,
+                SOL_SOCKET,
+                SO_BROADCAST,
+                true
+            );
+            if (0 >= $socketResult) {
+                $wolResult = "Error: " . socket_strerror($socketResult);
+                $debug[] = __LINE__ . " : " . $wolResult;
+            }
         }
-  
-        if(!$wolResult) {
-          $debug[] = __LINE__ . ' : Sending magic packet using socket-sendto()...';		
-          $flags = 0;															
-          $socket_data = socket_sendto($socket, $magicPacket, strlen($magicPacket), $flags, $ip, $port);
-          if(!$socket_data) {
-            $wolResult = 'Error: ' . socket_strerror($socketResult); 
-            $debug[] = __LINE__ . ' : ' . $wolResult;													
-            //DbOut("A magic packet of ".$socket_data." bytes has been sent via UDP to IP address: ".$addr.":".$port.", using the '".$function."()' function.");
-           }
+
+        if (!$wolResult) {
+            $debug[] = __LINE__ . " : Sending magic packet using socket-sendto()...";
+            $flags = 0;
+            $socket_data = socket_sendto(
+                $socket,
+                $magicPacket,
+                strlen($magicPacket),
+                $flags,
+                $ip,
+                $port
+            );
+            if (!$socket_data) {
+                $wolResult = "Error: " . socket_strerror($socketResult);
+                $debug[] = __LINE__ . " : " . $wolResult;
+                //DbOut("A magic packet of ".$socket_data." bytes has been sent via UDP to IP address: ".$addr.":".$port.", using the '".$function."()' function.");
+            }
         }
-        
-        if($socket) {
-          socket_close($socket);
-          unset($socket);			 
+
+        if ($socket) {
+            socket_close($socket);
+            unset($socket);
         }
-      
-    } else 
-      if(!$wolResult) {
-        $wolResult = 'Error: Cannot send magic packet. Neither fsockopen() nor'
-                   . ' socket_create() is available on this system.';
-        $debugOut[] = __LINE__ . ' : ' . $wolResult;						
-      }
-    
-    if(!$wolResult) $debugOut[] = __LINE__ . ' : Done.';
-  
+    } elseif (!$wolResult) {
+        $wolResult = "Error: Cannot send magic packet. Neither fsockopen() nor" . " socket_create() is available on this system.";
+        $debugOut[] = __LINE__ . " : " . $wolResult;
+    }
+
+    if (!$wolResult) {
+        $debugOut[] = __LINE__ . " : Done.";
+    }
+
     return $wolResult;
-  }
-  
-
-function safeGet($data, $key, $default) { 
-  return isset($data) && isset($data[$key]) ? $data[$key] : $default; 
 }
 
-function endWithErrorMessage($message) {
-  http_response_code(500);
-	die('Internal Server Error! ' . $message);
+function safeGet($data, $key, $default)
+{
+    return isset($data) && isset($data[$key]) ? $data[$key] : $default;
 }
 
-function endWithJsonResponse($responseData, $filename = NULL) {
-
-  if($responseData) {
-    array_walk_recursive($responseData, function(&$value, &$key) {
-      if(is_string($value)) $value = utf8_encode($value);
-    });  
-  }
-
-	$jsonString = json_encode($responseData, JSON_PRETTY_PRINT);
-
-	if(!$jsonString) endWithErrorMessage('Cannot convert response data to JSON.');
-
-	header('Content-Length: ' . strlen($jsonString) );
-	header('Content-Type: application/json');	
-	header('Expires: Mon, 26 Jul 1997 05:00:00:00 GMT');
-	header('Last-Modified: ' . gmdate('D, d M Y H:i:s'));
-  header('Cache-Control: no-cache, must-revalidate');
-	header('Pragma: no-cache');
-  if($filename) {
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Content-Transfer-Encoding: binary');
-  }
-  die($jsonString);	
+function endWithErrorMessage($message)
+{
+    http_response_code(500);
+    die("Internal Server Error! " . $message);
 }
 
+function endWithJsonResponse($responseData, $filename = null)
+{
+    if ($responseData) {
+        array_walk_recursive(
+            $responseData, function (&$value, &$key) {
+                if (is_string($value)) {
+                    $value = utf8_encode($value);
+                }
+            }
+        );
+    }
+
+    $jsonString = json_encode($responseData, JSON_PRETTY_PRINT);
+
+    if (!$jsonString) {
+        endWithErrorMessage("Cannot convert response data to JSON.");
+    }
+
+    header("Content-Length: " . strlen($jsonString));
+    header("Content-Type: application/json");
+    header("Expires: Mon, 26 Jul 1997 05:00:00:00 GMT");
+    header("Last-Modified: " . gmdate("D, d M Y H:i:s"));
+    header("Cache-Control: no-cache, must-revalidate");
+    header("Pragma: no-cache");
+    if ($filename) {
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header("Content-Transfer-Encoding: binary");
+    }
+    die($jsonString);
+}
 
 /**
- * Initialize required variables 
+ * Initialize required variables
  */
-$configFilename = __DIR__ . DIRECTORY_SEPARATOR . 'config.json';
-$requestMethod = $_SERVER['REQUEST_METHOD'];
+$configFilename = __DIR__ . DIRECTORY_SEPARATOR . "config.json";
+$requestMethod = $_SERVER["REQUEST_METHOD"];
 
-$isSocketExtensionLoaded = intval(extension_loaded('sockets'));
-$isDebugEnabled = intval(safeGet($_GET, 'debug', false));
-$ajaxOperation = safeGet($_POST, 'aop', safeGet($_GET, 'aop', ''));
-
+$isSocketExtensionLoaded = intval(extension_loaded("sockets"));
+$isDebugEnabled = intval(safeGet($_GET, "debug", false));
+$ajaxOperation = safeGet($_POST, "aop", safeGet($_GET, "aop", ""));
 
 /**
  * See if we have any ajax request
  */
-if('CONFIG.GET'===$ajaxOperation) {
-  $jsonData = [];
-  if(file_exists($configFilename)) {
-    $jsonString = file_get_contents($configFilename);
-    $jsonData = json_decode($jsonString, true);
-  }
-  endWithJsonResponse($jsonData);
-} else
-
-if('CONFIG.SET'===$ajaxOperation && 'POST'==$requestMethod) {
-    $phpInput = file_get_contents('php://input');
+if ("CONFIG.GET" === $ajaxOperation) {
+    $jsonData = [];
+    if (file_exists($configFilename)) {
+        $jsonString = file_get_contents($configFilename);
+        $jsonData = json_decode($jsonString, true);
+    }
+    endWithJsonResponse($jsonData);
+} elseif ("CONFIG.SET" === $ajaxOperation && "POST" == $requestMethod) {
+    $phpInput = file_get_contents("php://input");
     $jsonData = json_decode($phpInput);
     $jsonString = json_encode($jsonData, JSON_PRETTY_PRINT);
-    if(!file_put_contents($configFilename, $jsonString)) {
-      endWithErrorMessage('Cannot write configuration file.<br/>Please make sure the web server can write to the folder.');
+    if (!file_put_contents($configFilename, $jsonString)) {
+        endWithErrorMessage(
+            "Cannot write configuration file.<br/>Please make sure the web server can write to the folder."
+        );
     }
-    endWithJsonresponse([ 'status' => 'OK']);  
-} else
+    endWithJsonresponse(["status" => "OK"]);
+} elseif ("CONFIG.DOWNLOAD" === $ajaxOperation) {
+    $jsonData = [];
+    if (file_exists($configFilename)) {
+        $jsonString = file_get_contents($configFilename);
+        $jsonData = json_decode($jsonString, true);
+    }
+    endWithJsonResponse($jsonData, "wake-on-lan-" . date("Ymd-His") . ".json");
+} elseif ("HOST.CHECK" === $ajaxOperation) {
+    $HOST_CHECK_PORTS = [
+        "3389" => "3389 (RDP)",
+        "22" => "22 (SSH)",
+        "80" => "80 (HTTP)",
+        "443" => "443 (HTTPS)",
+    ];
+    $host = safeGet($_GET, "host", null);
+    if (!$host) {
+        endWithErrorMessage("Parameter host not set.");
+    }
+    $responseData = ["error" => false, "isUp" => false];
 
-if('CONFIG.DOWNLOAD'===$ajaxOperation) {
-  $jsonData = [];
-  if(file_exists($configFilename)) {
-    $jsonString = file_get_contents($configFilename);
-    $jsonData = json_decode($jsonString, true);
-  }
-  endWithJsonResponse($jsonData, 'wake-on-lan-' . date('Ymd-His') . '.json' );
-} else
+    $errStr = false;
+    $errCode = 0;
+    $waitTimeoutInSeconds = 3;
 
-if('HOST.CHECK'===$ajaxOperation) {
-  $HOST_CHECK_PORTS = [ '3389' => '3389 (RDP)', '22' => '22 (SSH)', '80' => '80 (HTTP)', '443' => '443 (HTTPS)' ]; 
-  $host = safeGet($_GET, 'host', null);
-  if(!$host) endWithErrorMessage('Parameter host not set.');
-  $responseData = [ 'error' => false, 'isUp' => false ];
+    foreach ($HOST_CHECK_PORTS as $port => $info) {
+        if ($responseData["isUp"]) {
+            break;
+        }
+        if ($fp = @fsockopen(
+            $host,
+            $port,
+            $errCode,
+            $errStr,
+            $waitTimeoutInSeconds
+        )
+        ) {
+            fclose($fp);
+            $responseData["isUp"] = true;
+            $responseData["info"] = $info;
+            $responseData["errCode"] = "";
+            $responseData["errStr"] = "";
+            $responseData["errorPort"] = "";
+        } else {
+            $responseData["isUp"] = false;
+            $responseData["errCode"] = $errCode;
+            $responseData["errStr"] = $errStr;
+            $responseData["errorPort"] = $port;
+        }
+    }
 
-  $errStr = false;
-  $errCode = 0;
-  $waitTimeoutInSeconds = 3; 
+    return endWithJsonResponse($responseData);
+} elseif ("HOST.WAKEUP" === $ajaxOperation) {
+    $responseData = ["error" => false, "data" => ""];
+    $DEBUGINFO = [];
 
-  foreach($HOST_CHECK_PORTS as $port=>$info) {
-    if($responseData['isUp']) break;
-    if($fp = @fsockopen($host,$port,$errCode,$errStr,$waitTimeoutInSeconds)){   
-      fclose($fp);
-      $responseData['isUp'] = true;
-      $responseData['info'] = $info;
-      $responseData['errCode'] = '';
-      $responseData['errStr'] = '';
-      $responseData['errorPort'] = '';
+    $mac = safeGet($_GET, "mac", "");
+
+    // Call to wake up the host
+    $MESSAGE = wakeOnLan(
+        $mac,
+        safeGet($_GET, "host", ""),
+        safeGet($_GET, "cidr", ""),
+        safeGet($_GET, "port", ""),
+        $debugOut
+    );
+
+    // If the request was with enabled debug mode then append the debug info to the response
+    // To enable debug mode add "&debug=1" to the url
+    if ($isDebugEnabled) {
+        $responseData["DEBUG"] = $DEBUGINFO;
+    }
+
+    if ($MESSAGE) {
+        endWithErrorMessage($MESSAGE);
     } else {
-    $responseData['isUp'] = false;
-    $responseData['errCode'] = $errCode;
-    $responseData['errStr'] = $errStr;
-    $responseData['errorPort'] = $port;
-   }    
-  }
-
-  return endWithJsonResponse($responseData);
-} else
-
-if('HOST.WAKEUP'===$ajaxOperation) {
-
-	$responseData = [ 'error' => false, 'data' => '' ];
-  $DEBUGINFO = [];
-
-  $mac = safeGet($_GET, 'mac', '');
-
-	// Call to wake up the host
-	$MESSAGE = wakeOnLan(
-    $mac
-  , safeGet($_GET, 'host', '')
-  , safeGet($_GET, 'cidr', '')
-  , safeGet($_GET, 'port', '')
-  , $debugOut
-  );
-
-	// If the request was with enabled debug mode then append the debug info to the response 
-	// To enable debug mode add "&debug=1" to the url
-	if($isDebugEnabled) $responseData['DEBUG'] = $DEBUGINFO;
-
-  if($MESSAGE) {
-    endWithErrorMessage($MESSAGE);
-  } else {
-    endWithJsonResponse([
-      'info' => 'Magic packet has been sent for <strong>' . $mac. '</strong>. Please wait for the host to come up...'
-    ]);
-  }
+        endWithJsonResponse(
+            [
+            "info" =>
+                "Magic packet has been sent for <strong>" .
+                $mac .
+                "</strong>. Please wait for the host to come up...",
+            ]
+        );
+    }
 } else {
-  if(isset($_GET['aop'])) endWithErrorMessage('Invalid value for aop!');
+    if (isset($_GET["aop"])) {
+        endWithErrorMessage("Invalid value for aop!");
+    }
 }
-
-
 ?><!DOCTYPE html>
 <html lang="en">
   <head>
@@ -316,17 +350,17 @@ if('HOST.WAKEUP'===$ajaxOperation) {
 
     <link rel="canonical" href="https://www.github.com/AndiSHFR/wake-on-lan.php">
 
-    <link href="//fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet"> 
+    <link href="//fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
-        
+
     <style>
     body { font-family: 'Varela Round', 'Segoe UI', 'Trebuchet MS', sans-serif; }
     #ajaxLoader { margin-left: 10px; display: none; }
     .dropdown-item i { min-width: 1.5em; }
     .ui-sortable tr { cursor:pointer; }
     .ui-sortable-helper { display: table; }
- 
+
     .unsaved-changes:after {
       content: '';
       width: 0;
@@ -343,11 +377,11 @@ if('HOST.WAKEUP'===$ajaxOperation) {
 
     footer { font-size: 80%; }
     </style>
-    
+
   </head>
   <body>
 
-    <div id="pageContainer" class="_container _container-fluid">  
+    <div id="pageContainer" class="_container _container-fluid">
 
       <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
         <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
@@ -357,7 +391,7 @@ if('HOST.WAKEUP'===$ajaxOperation) {
         </a>
 
         <ul class="nav nav-pills">
-          <li class="nav-item"><a href="https://www.github.com/AndiSHFR/Wake-on-lan.php" class="nav-link">GitHub</a></li>          
+          <li class="nav-item"><a href="https://www.github.com/AndiSHFR/Wake-on-lan.php" class="nav-link">GitHub</a></li>
           <li class="nav-item">
             <div class="dropdown text-end">
               <a href="#" class="nav-link dropdown-toggle" id="dropdownTools" data-bs-toggle="dropdown" aria-expanded="false" data-lang-ckey="tools">Tools</a>
@@ -370,7 +404,7 @@ if('HOST.WAKEUP'===$ajaxOperation) {
                 <li><a id="saveConfigToServer" class="dropdown-item" href="#"><i class="fa fa-save"></i> <span data-lang-ckey="save_config">Save Configuration</span></a></li>
               </ul>
             </div>
-          </li>          
+          </li>
         </ul>
 
         </header>
@@ -415,11 +449,11 @@ if('HOST.WAKEUP'===$ajaxOperation) {
       <footer class="d-flex flex-wrap justify-content-between">
 
         <p class="col-6">
-  			  <!-- https://www.iconfinder.com/icons/32338/flag_spain_spanish_flag_icon#size=16 -->
+                <!-- https://www.iconfinder.com/icons/32338/flag_spain_spanish_flag_icon#size=16 -->
           <a href="#" data-lang-switch="de-DE"><img id="flag-de" title="Deutsch" alt="Deutsch" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABkUlEQVQ4jY3Ty27TQBSA4WOc2AE745mxnbEtobxCN8S5vGIfoizYFMTGkVjwAJUQm4oVrSOExIZ3qPN3EQcqtbkc6duc+XV2I/J8vBd257yJJyKvzuT9OzYajX6uVitmsxl1XbNYLI6q65q6rpnP53ie91F839/EcYxSCq01xpijtNYopYiiCM/z1jIMgtamKVmeM3GOsiwpnij3qoqiKHDOkec5xlp8329EwrCVNEWyHCkKpCz/q6rdzrlegUzcrrUpMhg08ncUtlgDLoPCQVWCm0CWgtWgDZg9DToBNYZxzNfAb+QmDFqsoUtTuszSWU1nTM/S2acMndF0iYI44sofNHIThC2JojMJnda70Bzw4gEZtkjEgyQ9zYPYA3RPgURcyaCRb5/Dll9jtvea7Z1he2dPMGzvE/gT8/7Sb+T7j7CFMZAABtCAPUD3TQLEfPgUNHJ7G24gBlQfnJL0bcz1ddDIZjP8Da+BsDc6Yd+9Yb32v4iIfSsyWU6nF8vp9N1ZqupiKWJWIuP02O88ax4BPEaWLPEaiXwAAAAASUVORK5CYII="></img></a>
           <a href="#" data-lang-switch="en-US"><img id="flag-en" title="English" alt="English" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACqklEQVQ4jY2Ta0iTARSGj1LURAVnWW3ewAxFy4Et5yxvoGQKZd7INDVn6TKvqdiypqGFpCIazghdidOo3ORLx8zmj1SwLdEmkvStUJCCknVBLfvx9kMhSDEfeDhw3sP5ceAQrcdqg95WMrIiIuvNlMvl1nK53HptdnWZd0TRTKS0DXm1vQhKa0ZJQx+EyY2Q3dXCL7EOVfeewylcjrnfWMe4+d1jcvLPMJ8oVMI1uhpxJUrsjZAjtUIFh9DryKzshm2wDHE1aih40XjtGIIRxzCMcIMxyQ1HMXGfkWdYDht6sRVROa04ltGI2IL7EKXWI+FKG4Rn65FcpoT76VoMtPdjediIBf0YFvSv8HPUhKbSawy5B11gD8XfQZS0BX7xtxEjVUCQUIuYSwr4J9YiOlcB3vFK6BQa/BgcxRfdCD4PjOLXywk0F8sY2uN/jj1T2gFemAzpsgfYF3oVmRUdcBAW4nxZG2z9LiNW9hD1tiIMc3yg2+ED3TZvDG8/iBLaxZBnSDbLFZchvVyJnYJ8SMrbQR4SSG90gNwyUFDdDeLE4+36G6JnYowhcjnFBqc0gPjpiEyrA+1OwcmcZpB9EpLyFSCbOESWtOMmeWOI+OgjPvqIBz3xUUQ2DDV19rKDb+agn/wArdEMvWkWWqMZQ6ZZ9BtZDE3NQW18j4/j0/huNMFinMJXgwkrJhYtVbcYelFZwy490sCiegJLZw8sXU9hUa33U5ca890azKs0mO9S41uPFo3ZeQwp9x9gJ4UiGIQiGAICYTjyHwMCYTgswnSAGFWurgzNLK+YN7jPllCPjTGki3KYhdQVSxJnLGbyV81yxqLkH7P+5ktZfCDXDYqj9loiDseF7LhiNy9fsYevQOwhEKzWjVzLeF6+YuLYBZGdneNm37kl/gDsSQH5dAvcewAAAABJRU5ErkJggg=="></img></a>
           <a href="#" data-lang-switch="es-ES"><img id="flag-es" title="Española" alt="Española" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAhNJREFUOE+NkzFoE2EUx3/f3SVparFRoq22SaQHDhZrKJymIgq6ODhadHHsIjgIzlIHNycdBTvc0EgFa4gaECuCDg2FEiklhasQoVZpQVotNuflTr7cHZZWG9/4vu/93v//3vcJdoYAvL/kZWrHmUyEIUb9Cy1j9E8DTzxriy+cGhw8aju/QAgQyu4CPLdZHhOCUnn6iXgEi0OofXVUQBa3EiHduXTgMIb7XMyu5KxsUtdl0i/+H4CEaOSnZoqiXM5ahpHSfVuhAsEmGku1BpGoR9chiOEE1sIGEUxzLgQc3gKQEJvKgyUqTz/hLK+Tu3GEY9fTwXBlowagYprLIeCg7kuXNmwm8jYXvn+jcKtKz/1xTlxZ4K05yfBIIlAh7xECjluGcUD3qZJu8+7OSTrKY8wn2+i8WCLdM8da4RVn7n0EIkEjgWl+lgokIBEokCpsyrdzxLpM3rxI0Gl7nD2/wdcfw5y+OwNEtwP6LcPYt2UGDg8nhzi3Ns78e4XeDw7d1yK8zFxm5NJ0c/rhxkzzS1HMWv1WVpeA8KW6rLKXJBts0o2HR5wVVomTZD3YlLQqeFxYLoqpq9HFbG+0z5YjaA5SQdVcGg2BovjDcj0FVfFoOHJDMuexR/XIV+tFUblJbWCANPVta/7Xj/CbQztMvKYkiO9PaZqWymQyvj9pcbdwwHF+UqvVBFp7tdW7bfkzfwPxEcg6YixgfwAAAABJRU5ErkJggg=="></img></a>
-  			</p>
+              </p>
 
         <p class="col-6 text-muted text-end">&copy; 2021 Andreas Schaefer &lt;asc@schaefer-it.net&gt;</p>
 
@@ -434,7 +468,7 @@ if('HOST.WAKEUP'===$ajaxOperation) {
             <h5 class="modal-title" id="staticBackdropLabel" data-lang-ckey="c_load_configuration">Loading Configuration</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body">        
+          <div class="modal-body">
             <p data-lang-ckey="c_replace_config">Do you want to <strong>replace</strong> the existing configuration?</p>
             <p data-lang-ckey="c_append_config">Or do you want to <strong>append to</strong> the existing configuration?</p>
           </div>
@@ -454,7 +488,7 @@ if('HOST.WAKEUP'===$ajaxOperation) {
             <h5 class="modal-title" id="staticBackdropLabel">Import Configuration</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body">        
+          <div class="modal-body">
 
             <div id="importJsonErrorContainer"></div>
 
@@ -465,7 +499,7 @@ if('HOST.WAKEUP'===$ajaxOperation) {
               To import your configuration, paste the configuration json into the field above and click the <strong>[Import]</strong> button below.
               </div>
             </div>
-         
+
             <div class="mb-3 form-check">
               <input type="checkbox" class="form-check-input" id="importJsonOverwriteExisting">
               <label class="form-check-label" for="importJsonOverwriteExisting">Overwrite exiting configuration</label>
@@ -487,7 +521,7 @@ if('HOST.WAKEUP'===$ajaxOperation) {
             <h5 class="modal-title" id="staticBackdropLabel">Export Configuration</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body">        
+          <div class="modal-body">
 
             <div class="mb-3">
               <label for="exportJson" class="form-label">JSON Configuration</label>
@@ -496,7 +530,7 @@ if('HOST.WAKEUP'===$ajaxOperation) {
               Copy the contents of the edit field from above and save it to a json file.
               </div>
             </div>
-         
+
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -532,12 +566,12 @@ if('HOST.WAKEUP'===$ajaxOperation) {
     <h4 class="alert-heading">Configuration saved.</h4>
     <p>Your configuration was successfully saved to the server.</p>
   </script>
-  
+
   <script id="textConfirmUnsavedChanged" type="text/template">
   It looks like you have been editing something. If you leave before saving, your changes will be lost.
   </script>
 
- 
+
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
@@ -546,16 +580,16 @@ if('HOST.WAKEUP'===$ajaxOperation) {
 
 <script language="javascript" type="text/javascript">
 /*!
- * mini-i18n.js JavaScript Library v1.0.0 
+ * mini-i18n.js JavaScript Library v1.0.0
  * http://github.com/AndiSHFR/mini-i18n/
- * 
+ *
  * Copyright 2017 Andreas Schaefer
  * Licensed under the MIT license
- * 
- * @file 
+ *
+ * @file
  * JavaScript module to switch text elements in a web page on the fly.
  * The intended use is for switching display language on a web page.
- * For language IDs see http://www.localeplanet.com/icu/iso639.html 
+ * For language IDs see http://www.localeplanet.com/icu/iso639.html
  *                   or https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
  */
 
@@ -576,15 +610,15 @@ if ('undefined' === typeof jQuery) {
 +function(window, $, undefined) { "use strict";
 
   // PRIVATE
-  var     
-    err = undefined,    
+  var
+    err = undefined,
     // Available language texts strings
     languageData = {},
     // Global options for this module
     options = {
       // True will output debug information on the developer console
       debug: false,
-      // Current language. i.e. en-US or de-DE       
+      // Current language. i.e. en-US or de-DE
       language: '',
       // css style to be applied to the element if the language text for the key was not found
       notFound: 'lang-not-found',
@@ -593,7 +627,7 @@ if ('undefined' === typeof jQuery) {
       // User callback to be called _before_ a text is assigned to an element.
       // If the callback returns true the default behaviour will not be executed.
       onItem: undefined,
-      // User function called after the localization has taken place. 
+      // User function called after the localization has taken place.
       changed: undefined,
       // Either the language data, a callback to return the language data or an url to fetch the language data
       data: undefined
@@ -612,7 +646,7 @@ if ('undefined' === typeof jQuery) {
         args.unshift('** MINI-I18N: ');
         console.log.apply(null, args);
       }
-    },  
+    },
 
     /**
      * Get a value from an object by its path
@@ -627,7 +661,7 @@ if ('undefined' === typeof jQuery) {
       if('' === path) return obj;
       path = path.replace(/\[(\w+)\]/g, '.$1');   // convert indexes to properties
       path = path.replace(/^\./, '').split('.');  // strip a leading dot and split at dots
-      var i = 0, len = path.length;               
+      var i = 0, len = path.length;
       while(obj && i < len) {
         obj = obj[path[i++]];
       }
@@ -635,11 +669,11 @@ if ('undefined' === typeof jQuery) {
     },
 
     explainAjaxError = function (jqXHR, textStatus, errorThrown) {
-      var 
+      var
         knownErrors = {
           0: 'Not connected. Please verify your network connection.',
           404: '404 - The requested page could not be found.',
-          500: '500 - Internal Server Error.', 
+          500: '500 - Internal Server Error.',
           'parseerror': 'Parsing requested JSON result failed.',
           'timeout': 'Time out error.',
           'abort': 'Ajax request aborted.'
@@ -681,10 +715,10 @@ if ('undefined' === typeof jQuery) {
       });
       return value;
   },
-      
+
     /**
      * Loops thru all language elements and sets the current language text
-     * 
+     *
      * @param {string} lang
      * @return
      * @api private
@@ -696,7 +730,7 @@ if ('undefined' === typeof jQuery) {
 
       // Select all elements and loop thru them
       $('[data-lang-ckey],[data-lang-tkey],[data-lang-pkey]').each(function () {
-        var 
+        var
           // <span data-mi18n="C:xxx;T:sss;P:aaa;V:sdsd">...</span> data('mi18n').split(';').split(':')
           $this = $(this),                     // jQuery object of the element
           ckey = $this.attr('data-lang-ckey'), // Key for the content of the element
@@ -710,13 +744,13 @@ if ('undefined' === typeof jQuery) {
           ;
 
         // Execute callback and if the result is false run the default action
-        if(!options.onItem || 
+        if(!options.onItem ||
            !options.onItem.apply(
-             null, 
-             [lang, 
-              { 
-               content: { key: ckey, val: cval}, 
-               title: {key: tkey, val: tval}, 
+             null,
+             [lang,
+              {
+               content: { key: ckey, val: cval},
+               title: {key: tkey, val: tval},
                placeholder: { key: pkey, val:pval },
                value: { key: vkey, val:vval }
               }
@@ -731,7 +765,7 @@ if ('undefined' === typeof jQuery) {
             .removeClass(options.notFound)
             .html(cval)
             .addClass( (cval ? undefined : options.notFound ) );
-          }          
+          }
 
           // If there is a title key set the title attribute and handle "not found" condition
           if(tkey) {
@@ -771,7 +805,7 @@ if ('undefined' === typeof jQuery) {
 
     switchLanguage = function(lang, cb) {
 
-      var 
+      var
         data = languageData[lang],
         source = undefined
         ;
@@ -780,8 +814,8 @@ if ('undefined' === typeof jQuery) {
 
         if('string' == typeof options.source) {
           debug('Prepare source from string:', options.source);
-          source = options.source.replace('{{LANG}}', lang); 
-        } else 
+          source = options.source.replace('{{LANG}}', lang);
+        } else
 
         if('function' == typeof options.source) {
           debug('Prepare source by calling:', options.source);
@@ -794,13 +828,13 @@ if ('undefined' === typeof jQuery) {
             type:'GET',
             url: source,
             cache: false,
-            success: function(data_) { 
+            success: function(data_) {
              debug('Received language data:', data_);
              if('string' == typeof data_) {
               languageData[lang] = parseIniString(data_);
              }else {
               languageData[lang] = data_;
-             }              
+             }
              data = languageData[lang];
              cb && cb.apply(null, [lang, data]);
             },
@@ -815,7 +849,7 @@ if ('undefined' === typeof jQuery) {
           });
         } else {
           debug('No language data and no source for language:', lang);
-          cb && cb.apply(null, [lang, data]);  
+          cb && cb.apply(null, [lang, data]);
         }
 
       } else {
@@ -825,20 +859,20 @@ if ('undefined' === typeof jQuery) {
 
       /**
        * Switch language text on elements
-       * 
+       *
        * @param {string} lang
        * @return
        * @api private
        */
-      language = function(lang) {        
+      language = function(lang) {
         err = undefined;
         debug('Switching to language: ', lang);
         switchLanguage(lang, updateElements);
       },
 
       /**
-       * Sets configuration values 
-       * 
+       * Sets configuration values
+       *
        * @param {object} options_
        * @return
        * @api private
@@ -857,8 +891,8 @@ if ('undefined' === typeof jQuery) {
    * Can be called in two ways.
    * Setting options    : p is an object with configuration settings.
    * Switching language : p is a string with the language name. i.e. 'en-US'
-   * 
-   * @param {object|string} p 
+   *
+   * @param {object|string} p
    * @return
    * @api public
    */
@@ -878,16 +912,16 @@ if ('undefined' === typeof jQuery) {
       if(lang) $.fn.miniI18n(lang);
     });
   });
-  
+
 }(window, jQuery);
 </script>
 
 <script language="javascript" type="text/javascript">
 $(function () { 'use strict'
 
-  $.fn.bootstrapChoice = function(options) {    
+  $.fn.bootstrapChoice = function(options) {
     var
-      defaults = {               
+      defaults = {
         modal: null
       , onClick: function(choice, button) { return false; }
       , getChoice: function(button) { return $(button).data('choice'); } // Default: return the data-choice attribute value
@@ -899,20 +933,20 @@ $(function () { 'use strict'
       ;
 
     return this.each(function() {
-      var 
+      var
         settings = $.extend({}, defaults, options)
       , $this = $(this)
       , $modal = $(settings.modal);
-        ; 
+        ;
 
-      if(!settings.modal) alert('No modal set (.modal == null). This is not allowed!');      
+      if(!settings.modal) alert('No modal set (.modal == null). This is not allowed!');
 
       $modal.on('show.bs.modal', function() { settings.onShow.apply(null, [] ); });
       $modal.on('shown.bs.modal', function() { settings.onShown.apply(null, [] ); });
       $modal.on('hide.bs.modal', function() { settings.onHide.apply(null, [] ); });
       $modal.on('hidden.bs.modal', function() { settings.onHidden.apply(null, [] ); });
 
-      $modal.on('click', 'button', function() {          
+      $modal.on('click', 'button', function() {
           var choice = null;
           var closeModal = false;
           if('modal'==$(this).data('bs-dismiss')) return;
@@ -921,10 +955,10 @@ $(function () { 'use strict'
           if(closeModal) $modal.modal('hide');
       });
 
-      $this.on('click', function() { 
+      $this.on('click', function() {
         $modal.modal('show');
       });
-      
+
     });
   }
 
@@ -936,11 +970,11 @@ $(function () { 'use strict'
 <script language="javascript" type="text/javascript">
 $(function () { 'use strict'
   var
-    isSocketExtensionLoaded = <?php echo $isSocketExtensionLoaded; ?>    
+    isSocketExtensionLoaded = <?php echo $isSocketExtensionLoaded; ?>
 
-  , isDebugEnabled = <?php echo $isDebugEnabled; ?>  
+  , isDebugEnabled = <?php echo $isDebugEnabled; ?>
 
-  , baseAddress = '<?php echo $_SERVER['PHP_SELF']; ?>'
+  , baseAddress = '<?php echo $_SERVER["PHP_SELF"]; ?>'
 
   , debugPrint = function(/* args */) {
       if(console && isDebugEnabled) {
@@ -976,9 +1010,9 @@ $(function () { 'use strict'
       return params;
     }
 
-  , showNotification = function(message, style, autoClose) {     
+  , showNotification = function(message, style, autoClose) {
       var $notificationContainer = $('#notificationContainer');
- 
+
       if (!message || ''===message) {
         $notificationContainer.empty();
         return;
@@ -996,7 +1030,7 @@ $(function () { 'use strict'
         ,   '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" ></button>',
         , '</div>'
         ].join('')).hide()
-        
+
       , hideNotification = function () {
           $notification.slideUp(400, function () { $notification.remove() });
         }
@@ -1075,7 +1109,7 @@ $(function () { 'use strict'
       return $('#hostTable tbody tr').map(function() { return $(this).data('wol'); }).get();
     }
 
-  , addHost = function(mac,host,cidr,port,comment) {      
+  , addHost = function(mac,host,cidr,port,comment) {
       var
         hostConfig = {
           mac: mac
@@ -1138,9 +1172,9 @@ $(function () { 'use strict'
 
   , updateUi = function() {
       if(unsavedChangesCount) {
-        $('#pageContainer').addClass('unsaved-changes') 
+        $('#pageContainer').addClass('unsaved-changes')
       } else {
-        $('#pageContainer').removeClass('unsaved-changes') 
+        $('#pageContainer').removeClass('unsaved-changes')
       }
     }
 
@@ -1161,7 +1195,7 @@ $(function () { 'use strict'
           url: baseAddress
         , type: 'GET'
         , data: { debug: isDebugEnabled, aop: 'HOST.CHECK', host:wolInfo.host }
-        , beforeSend: function(/* xhr */) { 
+        , beforeSend: function(/* xhr */) {
             $i
               .removeClass('fa-question fa-eye fa-thumbs-up fa-thumbs-down text-danger text-success')
               .addClass('fa-eye text-muted')
@@ -1185,14 +1219,14 @@ $(function () { 'use strict'
                   .removeClass('fa-eye text-muted')
                   .addClass('fa-thumbs-down text-danger')
                 ;
-              } 
+              }
             }
           }
         });
       }
     }
     ;
-		
+
 
 
   /**
@@ -1202,7 +1236,7 @@ $(function () { 'use strict'
     setTimeout(saveConfigToServer, 10);
   })
 
-  $('#loadConfigFromServer').bootstrapChoice({ 
+  $('#loadConfigFromServer').bootstrapChoice({
     modal: '#chooseLoadConfigModal'
   , onClick: function(choice) {
       var rowCount = $('#hostTable tbody tr').length;
@@ -1210,8 +1244,8 @@ $(function () { 'use strict'
       if(rowCount != 0) makeDirty();
       loadConfigFromServer((rowCount != 0));
       return true;
-    }   
-  });  
+    }
+  });
 
   $('#exportModal').on('show.bs.modal', function() {
     $('#exportJson').val(JSON.stringify(getConfiguration()));
@@ -1249,25 +1283,25 @@ $(function () { 'use strict'
   });
 
   $('#hostTable tbody').on('click', '.btnRemoveHost', function(event) {
-		event.preventDefault();
-		var 
+        event.preventDefault();
+        var
       $tr = $(this).closest('tr')
     , wolData = $tr.data('wol')
       ;
 
-		$('#mac').val(wolData.mac);
-		$('#host').val(wolData.host);
-		$('#cidr').val(wolData.cidr);
-		$('#port').val(wolData.port);
-		$('#comment').val(wolData.comment);
+        $('#mac').val(wolData.mac);
+        $('#host').val(wolData.host);
+        $('#cidr').val(wolData.cidr);
+        $('#port').val(wolData.port);
+        $('#comment').val(wolData.comment);
     $tr.remove();
     makeDirty();
-		return false;
+        return false;
   })
 
   $('#hostTable tbody').on('click', '.btnWakeUpHost', function() {
-		event.preventDefault();
-		var 
+        event.preventDefault();
+        var
       $tr = $(this).closest('tr')
     , wolData = $tr.data('wol')
       ;
@@ -1292,7 +1326,7 @@ $(function () { 'use strict'
       });
 
 
-		return false;
+        return false;
   })
 
   $('#addHost').on('click', function(evt) {
@@ -1396,18 +1430,18 @@ $(function () { 'use strict'
     return new bootstrap.Tooltip(tooltipTriggerEl)
    });
 
-  /** 
+  /**
    * Enable sorting the table rows with drag&drop
    */
   $("#hostTable tbody").sortable({
     helper: function(e, tr) {
-		  var $originals = tr.children();
-		  var $helper = tr.clone();
-		  $helper.children().each(function(index) {
-		    $(this).width($originals.eq(index).width())
-		  });
-		  return $helper;
-  	}
+          var $originals = tr.children();
+          var $helper = tr.clone();
+          $helper.children().each(function(index) {
+            $(this).width($originals.eq(index).width())
+          });
+          return $helper;
+      }
   , items: 'tr'
   , opacity: 0.9
   , stop: function(event, ui) { makeDirty(); }
@@ -1425,13 +1459,13 @@ $(function () { 'use strict'
   // Show warning if the sockets extension is not available in php
   if(!isSocketExtensionLoaded) showNotification( $('#textNoSocketExtensionLoaded').html(), 'warning' );
 
-  // Finally load the configuration from the server 
+  // Finally load the configuration from the server
   setTimeout(loadConfigFromServer, 10);
 
   // Start updating the host state
   setTimeout(checkNextHostState, 1000);
 
 });
-</script>      
+</script>
   </body>
 </html>
