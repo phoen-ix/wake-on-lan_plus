@@ -409,9 +409,9 @@ if ("CONFIG.GET" === $ajaxOperation) {
         </colgroup>
         <thead>
           <th></th>
-          <th data-lang-ckey="mac_address">Mac-Address</th>
-          <th data-lang-ckey="ip_or_hostname">Ip-Address or Hostname</th>
-          <th data-lang-ckey="subnet">Subnet Size (CIDR)</th>
+          <th data-lang-ckey="mac_address">MAC-Address</th>
+          <th data-lang-ckey="ip_or_hostname">Ip or Hostname</th>
+          <th data-lang-ckey="subnet">Subnet</th>
           <th data-lang-ckey="port">Port</th>
           <th data-lang-ckey="comment">Comment</th>
           <th></th>
@@ -423,11 +423,11 @@ if ("CONFIG.GET" === $ajaxOperation) {
         <tfoot>
           <tr>
             <td class="align-middle"></td>
-            <td class="align-middle"><input id="mac" type="text" class="form-control" value="" placeholder="Mac-Address here"  data-lang-pkey="p_mac_address"/></td>
-            <td class="align-middle"><input id="host" type="text" class="form-control" value="" placeholder="Ip or Hostname here"  data-lang-pkey="p_ip_or_hostname"/></td>
-            <td class="align-middle"><input id="cidr" type="text" class="form-control" value="" placeholder="Subnet Size here"  data-lang-pkey="p_ip_subnet"/></td>
-            <td class="align-middle"><input id="port" type="text" class="form-control" value="" placeholder="Port here"  data-lang-pkey="p_port"/></td>
-            <td class="align-middle"><input id="comment" type="text" class="form-control" value="" placeholder="Comment here" data-lang-pkey="p_comment"/></td>
+            <td class="align-middle"><input id="mac" type="text" class="form-control" value="" placeholder="MAC-Address"  data-lang-pkey="mac_address"/></td>
+            <td class="align-middle"><input id="host" type="text" class="form-control" value="" placeholder="Ip or Hostname"  data-lang-pkey="ip_or_hostname"/></td>
+            <td class="align-middle"><input id="cidr" type="text" class="form-control" value="" placeholder="Subnet Size"  data-lang-pkey="ip_subnet"/></td>
+            <td class="align-middle"><input id="port" type="text" class="form-control" value="" placeholder="Port"  data-lang-pkey="port"/></td>
+            <td class="align-middle"><input id="comment" type="text" class="form-control" value="" placeholder="Comment" data-lang-pkey="comment"/></td>
             <td class="align-middle">
               <div class="d-flex flex-row justify-content-end">
                 <button type="button" id="addHost" class="btn btn-outline-primary btn-sm mx-1"><i class="fa fa-plus"></i></button>
@@ -447,7 +447,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
           <a href="#" data-lang-switch="es-ES"><img id="flag-es" title="Española" alt="Española" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAhNJREFUOE+NkzFoE2EUx3/f3SVparFRoq22SaQHDhZrKJymIgq6ODhadHHsIjgIzlIHNycdBTvc0EgFa4gaECuCDg2FEiklhasQoVZpQVotNuflTr7cHZZWG9/4vu/93v//3vcJdoYAvL/kZWrHmUyEIUb9Cy1j9E8DTzxriy+cGhw8aju/QAgQyu4CPLdZHhOCUnn6iXgEi0OofXVUQBa3EiHduXTgMIb7XMyu5KxsUtdl0i/+H4CEaOSnZoqiXM5ahpHSfVuhAsEmGku1BpGoR9chiOEE1sIGEUxzLgQc3gKQEJvKgyUqTz/hLK+Tu3GEY9fTwXBlowagYprLIeCg7kuXNmwm8jYXvn+jcKtKz/1xTlxZ4K05yfBIIlAh7xECjluGcUD3qZJu8+7OSTrKY8wn2+i8WCLdM8da4RVn7n0EIkEjgWl+lgokIBEokCpsyrdzxLpM3rxI0Gl7nD2/wdcfw5y+OwNEtwP6LcPYt2UGDg8nhzi3Ns78e4XeDw7d1yK8zFxm5NJ0c/rhxkzzS1HMWv1WVpeA8KW6rLKXJBts0o2HR5wVVomTZD3YlLQqeFxYLoqpq9HFbG+0z5YjaA5SQdVcGg2BovjDcj0FVfFoOHJDMuexR/XIV+tFUblJbWCANPVta/7Xj/CbQztMvKYkiO9PaZqWymQyvj9pcbdwwHF+UqvVBFp7tdW7bfkzfwPxEcg6YixgfwAAAABJRU5ErkJggg=="></img></a>
               </p>
 
-        <p class="col-6 text-muted text-end">&copy; 2021 Andreas Schaefer &lt;asc@schaefer-it.net&gt;</p>
+        <p class="col-6 text-muted text-end"><a href="https://github.com/phoen-ix/wake-on-lan_plus" target="_blank">GitHub</a></p>
 
       </footer>
 
@@ -1361,16 +1361,10 @@ $(function () { 'use strict'
       , 'load_config': 'Load Configuration'
       , 'save_config': 'Save Configuration'
       , 'mac_address': 'MAC-Address'
-      , 'p_mac_address': 'Mac-Address here'
       , 'ip_or_hostname': 'IP or Hostname'
-      , 'p_ip_or_hostname': 'IP or Hostname here'
-      , 'subnet': 'Subnet Size (CIDR)'
-      , 'p_subnet': 'Subnet Size (CIDR) here'
+      , 'subnet': 'Subnet'
       , 'port': 'Port'
-      , 'p_port': 'Port here'
       , 'comment': 'Comment'
-      , 'p_comment': 'Comment here'
-
       , 'c_load_configuration': 'Load Configuration'
       , 'c_replace_config': ''
       , 'c_append_config': ''
@@ -1384,15 +1378,10 @@ $(function () { 'use strict'
       , 'load_config': 'Konfiguration laden'
       , 'save_config': 'Konfiguration speichern'
       , 'mac_address': 'MAC-Addresse'
-      , 'p_mac_address': 'Mac-Addresse hier'
       , 'ip_or_hostname': 'IP oder Hostname'
-      , 'p_ip_or_hostname': 'IP oder Hostname hier'
-      , 'subnet': 'Subnet Größe (CIDR)'
-      , 'p_subnet': 'Subnet Größe (CIDR) hier'
+      , 'subnet': 'Subnet'
       , 'port': 'Port'
-      , 'p_port': 'Port hier'
       , 'comment': 'Bemerkung'
-      , 'p_comment': 'Bemerkung hier'
       }
     , 'es-ES': {
         'title': 'Wake On Lan'
@@ -1403,15 +1392,10 @@ $(function () { 'use strict'
       , 'load_config': 'Cargar configuración'
       , 'save_config': 'Guardar configuración'
       , 'mac_address': 'MAC-Dirección'
-      , 'p_mac_address': 'Mac-Dirección aquí'
       , 'ip_or_hostname': 'IP o nombre de host'
-      , 'p_ip_or_hostname': 'IP o nombre de host aquí'
-      , 'subnet': 'Tamaño de subred (CIDR)'
-      , 'p_subnet': 'Tamaño de subred(CIDR) aquí'
+      , 'subnet': 'Subred'
       , 'port': 'Puerto'
-      , 'p_port': 'Puerto aquí'
       , 'comment': 'Comentario'
-      , 'p_comment': 'Comentario aquí'
       }
     }
   });
