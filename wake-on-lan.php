@@ -1,4 +1,4 @@
-<?php
+<?php 
 /**
  * PHPWOL - Send wake on lan magic packet from php.
  * PHP Version 5.6.28
@@ -52,7 +52,7 @@ function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut)
         $mac = str_replace(":", "-", strtoupper($mac));
         $debugOut[] = __LINE__ . " : MAC = " . $mac;
 
-        if (!preg_match("/([A-F0-9]{2}[-]){5}([0-9A-F]){2}/", $mac)
+        if (!preg_match("/([A-F0-9]{2}[-]){5}([0-9A-F]){2}/", $mac) 
             || strlen($mac) != 17
         ) {
             $wolResult = "Error: Invalid MAC-address: " . $mac;
@@ -195,7 +195,7 @@ function endWithJsonResponse($responseData, $filename = null)
         array_walk_recursive(
             $responseData, function (&$value, &$key) {
                 if (is_string($value)) {
-                    $value = utf8_encode($value);
+                    $value = mb_convert_encoding($value, 'UTF-8');
                 }
             }
         );
@@ -350,52 +350,53 @@ if ("CONFIG.GET" === $ajaxOperation) {
 
     <link rel="canonical" href="https://www.github.com/AndiSHFR/wake-on-lan.php">
 
-    <link href="//fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
+    <link href="//fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet"> 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
-
+        
     <style>
     body { font-family: 'Varela Round', 'Segoe UI', 'Trebuchet MS', sans-serif; }
     #ajaxLoader { margin-left: 10px; display: none; }
     .dropdown-item i { min-width: 1.5em; }
     .ui-sortable tr { cursor:pointer; }
     .ui-sortable-helper { display: table; }
-
-    .unsaved-changes:after {
-      content: '';
-      width: 0;
-      height: 0;
-      border-style: solid;
-      border-width: 0 60px 60px 0;
-      border-color: transparent #e67219 transparent transparent;
-      right: 0;
-      top: 0;
-      position: absolute;
+	
+    #saveButton {
+      display: block;
+      position: relative;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 20px; /* Adjust margin top as needed */
     }
-
     #pageContainer { padding: 5px; margin: auto; }
-
+	
+	footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+    }
+ 
     footer { font-size: 80%; }
     </style>
-
+    
   </head>
   <body>
 
-    <div id="pageContainer" class="_container _container-fluid">
+    <div id="pageContainer" class="_container _container-fluid">  
 
       <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
-        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+        <a href="" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
           <svg class="bi me-2" width="40" height="32"><use xlink:href="#"/></svg>
           <span class="fs-4" data-lang-ckey="title">Wake On Lan</span>
           <img id="ajaxLoader" src="data:image/gif;base64,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"></img>
         </a>
 
-        <ul class="nav nav-pills">
-          <li class="nav-item"><a href="https://www.github.com/AndiSHFR/Wake-on-lan.php" class="nav-link">GitHub</a></li>
+        <ul class="nav nav-pills">         
           <li class="nav-item">
             <div class="dropdown text-end">
-              <a href="#" class="nav-link dropdown-toggle" id="dropdownTools" data-bs-toggle="dropdown" aria-expanded="false" data-lang-ckey="tools">Tools</a>
-                <ul class="dropdown-menu text-small" aria-labelledby="dropdownTools">
+              <a href="#" class="nav-link dropdown-toggle" id="dropdownOptions" data-bs-toggle="dropdown" aria-expanded="false" data-lang-ckey="options">Options</a>
+                <ul class="dropdown-menu text-small" aria-labelledby="dropdownOptions">
                 <li><a id="downloadConfig" class="dropdown-item" href="?aop=CONFIG.DOWNLOAD"><i class="fa fa-file-csv"></i> <span data-lang-ckey="download_config">Download Configuration</span></a></li>
                 <li><a id="exportConfig" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#exportModal" href="#"><i class="fa fa-file-export"></i> <span data-lang-ckey="export_config">Export Configuration</span></a></li>
                 <li><a id="importConfig" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importModal" href="#"><i class="fa fa-file-import"></i> <span data-lang-ckey="import_config">Import Configuration</span></a></li>
@@ -404,7 +405,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
                 <li><a id="saveConfigToServer" class="dropdown-item" href="#"><i class="fa fa-save"></i> <span data-lang-ckey="save_config">Save Configuration</span></a></li>
               </ul>
             </div>
-          </li>
+          </li>          
         </ul>
 
         </header>
@@ -468,7 +469,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
             <h5 class="modal-title" id="staticBackdropLabel" data-lang-ckey="c_load_configuration">Loading Configuration</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body">        
             <p data-lang-ckey="c_replace_config">Do you want to <strong>replace</strong> the existing configuration?</p>
             <p data-lang-ckey="c_append_config">Or do you want to <strong>append to</strong> the existing configuration?</p>
           </div>
@@ -488,7 +489,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
             <h5 class="modal-title" id="staticBackdropLabel">Import Configuration</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body">        
 
             <div id="importJsonErrorContainer"></div>
 
@@ -499,7 +500,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
               To import your configuration, paste the configuration json into the field above and click the <strong>[Import]</strong> button below.
               </div>
             </div>
-
+         
             <div class="mb-3 form-check">
               <input type="checkbox" class="form-check-input" id="importJsonOverwriteExisting">
               <label class="form-check-label" for="importJsonOverwriteExisting">Overwrite exiting configuration</label>
@@ -521,7 +522,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
             <h5 class="modal-title" id="staticBackdropLabel">Export Configuration</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body">        
 
             <div class="mb-3">
               <label for="exportJson" class="form-label">JSON Configuration</label>
@@ -530,7 +531,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
               Copy the contents of the edit field from above and save it to a json file.
               </div>
             </div>
-
+         
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -566,12 +567,12 @@ if ("CONFIG.GET" === $ajaxOperation) {
     <h4 class="alert-heading">Configuration saved.</h4>
     <p>Your configuration was successfully saved to the server.</p>
   </script>
-
+  
   <script id="textConfirmUnsavedChanged" type="text/template">
   It looks like you have been editing something. If you leave before saving, your changes will be lost.
   </script>
 
-
+ 
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
@@ -580,16 +581,16 @@ if ("CONFIG.GET" === $ajaxOperation) {
 
 <script language="javascript" type="text/javascript">
 /*!
- * mini-i18n.js JavaScript Library v1.0.0
+ * mini-i18n.js JavaScript Library v1.0.0 
  * http://github.com/AndiSHFR/mini-i18n/
- *
+ * 
  * Copyright 2017 Andreas Schaefer
  * Licensed under the MIT license
- *
- * @file
+ * 
+ * @file 
  * JavaScript module to switch text elements in a web page on the fly.
  * The intended use is for switching display language on a web page.
- * For language IDs see http://www.localeplanet.com/icu/iso639.html
+ * For language IDs see http://www.localeplanet.com/icu/iso639.html 
  *                   or https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
  */
 
@@ -610,15 +611,15 @@ if ('undefined' === typeof jQuery) {
 +function(window, $, undefined) { "use strict";
 
   // PRIVATE
-  var
-    err = undefined,
+  var     
+    err = undefined,    
     // Available language texts strings
     languageData = {},
     // Global options for this module
     options = {
       // True will output debug information on the developer console
       debug: false,
-      // Current language. i.e. en-US or de-DE
+      // Current language. i.e. en-US or de-DE       
       language: '',
       // css style to be applied to the element if the language text for the key was not found
       notFound: 'lang-not-found',
@@ -627,7 +628,7 @@ if ('undefined' === typeof jQuery) {
       // User callback to be called _before_ a text is assigned to an element.
       // If the callback returns true the default behaviour will not be executed.
       onItem: undefined,
-      // User function called after the localization has taken place.
+      // User function called after the localization has taken place. 
       changed: undefined,
       // Either the language data, a callback to return the language data or an url to fetch the language data
       data: undefined
@@ -646,7 +647,7 @@ if ('undefined' === typeof jQuery) {
         args.unshift('** MINI-I18N: ');
         console.log.apply(null, args);
       }
-    },
+    },  
 
     /**
      * Get a value from an object by its path
@@ -661,7 +662,7 @@ if ('undefined' === typeof jQuery) {
       if('' === path) return obj;
       path = path.replace(/\[(\w+)\]/g, '.$1');   // convert indexes to properties
       path = path.replace(/^\./, '').split('.');  // strip a leading dot and split at dots
-      var i = 0, len = path.length;
+      var i = 0, len = path.length;               
       while(obj && i < len) {
         obj = obj[path[i++]];
       }
@@ -669,11 +670,11 @@ if ('undefined' === typeof jQuery) {
     },
 
     explainAjaxError = function (jqXHR, textStatus, errorThrown) {
-      var
+      var 
         knownErrors = {
           0: 'Not connected. Please verify your network connection.',
           404: '404 - The requested page could not be found.',
-          500: '500 - Internal Server Error.',
+          500: '500 - Internal Server Error.', 
           'parseerror': 'Parsing requested JSON result failed.',
           'timeout': 'Time out error.',
           'abort': 'Ajax request aborted.'
@@ -715,10 +716,10 @@ if ('undefined' === typeof jQuery) {
       });
       return value;
   },
-
+      
     /**
      * Loops thru all language elements and sets the current language text
-     *
+     * 
      * @param {string} lang
      * @return
      * @api private
@@ -730,7 +731,7 @@ if ('undefined' === typeof jQuery) {
 
       // Select all elements and loop thru them
       $('[data-lang-ckey],[data-lang-tkey],[data-lang-pkey]').each(function () {
-        var
+        var 
           // <span data-mi18n="C:xxx;T:sss;P:aaa;V:sdsd">...</span> data('mi18n').split(';').split(':')
           $this = $(this),                     // jQuery object of the element
           ckey = $this.attr('data-lang-ckey'), // Key for the content of the element
@@ -744,13 +745,13 @@ if ('undefined' === typeof jQuery) {
           ;
 
         // Execute callback and if the result is false run the default action
-        if(!options.onItem ||
+        if(!options.onItem || 
            !options.onItem.apply(
-             null,
-             [lang,
-              {
-               content: { key: ckey, val: cval},
-               title: {key: tkey, val: tval},
+             null, 
+             [lang, 
+              { 
+               content: { key: ckey, val: cval}, 
+               title: {key: tkey, val: tval}, 
                placeholder: { key: pkey, val:pval },
                value: { key: vkey, val:vval }
               }
@@ -765,7 +766,7 @@ if ('undefined' === typeof jQuery) {
             .removeClass(options.notFound)
             .html(cval)
             .addClass( (cval ? undefined : options.notFound ) );
-          }
+          }          
 
           // If there is a title key set the title attribute and handle "not found" condition
           if(tkey) {
@@ -805,7 +806,7 @@ if ('undefined' === typeof jQuery) {
 
     switchLanguage = function(lang, cb) {
 
-      var
+      var 
         data = languageData[lang],
         source = undefined
         ;
@@ -814,8 +815,8 @@ if ('undefined' === typeof jQuery) {
 
         if('string' == typeof options.source) {
           debug('Prepare source from string:', options.source);
-          source = options.source.replace('{{LANG}}', lang);
-        } else
+          source = options.source.replace('{{LANG}}', lang); 
+        } else 
 
         if('function' == typeof options.source) {
           debug('Prepare source by calling:', options.source);
@@ -828,13 +829,13 @@ if ('undefined' === typeof jQuery) {
             type:'GET',
             url: source,
             cache: false,
-            success: function(data_) {
+            success: function(data_) { 
              debug('Received language data:', data_);
              if('string' == typeof data_) {
               languageData[lang] = parseIniString(data_);
              }else {
               languageData[lang] = data_;
-             }
+             }              
              data = languageData[lang];
              cb && cb.apply(null, [lang, data]);
             },
@@ -849,7 +850,7 @@ if ('undefined' === typeof jQuery) {
           });
         } else {
           debug('No language data and no source for language:', lang);
-          cb && cb.apply(null, [lang, data]);
+          cb && cb.apply(null, [lang, data]);  
         }
 
       } else {
@@ -859,20 +860,20 @@ if ('undefined' === typeof jQuery) {
 
       /**
        * Switch language text on elements
-       *
+       * 
        * @param {string} lang
        * @return
        * @api private
        */
-      language = function(lang) {
+      language = function(lang) {        
         err = undefined;
         debug('Switching to language: ', lang);
         switchLanguage(lang, updateElements);
       },
 
       /**
-       * Sets configuration values
-       *
+       * Sets configuration values 
+       * 
        * @param {object} options_
        * @return
        * @api private
@@ -891,8 +892,8 @@ if ('undefined' === typeof jQuery) {
    * Can be called in two ways.
    * Setting options    : p is an object with configuration settings.
    * Switching language : p is a string with the language name. i.e. 'en-US'
-   *
-   * @param {object|string} p
+   * 
+   * @param {object|string} p 
    * @return
    * @api public
    */
@@ -912,16 +913,16 @@ if ('undefined' === typeof jQuery) {
       if(lang) $.fn.miniI18n(lang);
     });
   });
-
+  
 }(window, jQuery);
 </script>
 
 <script language="javascript" type="text/javascript">
 $(function () { 'use strict'
 
-  $.fn.bootstrapChoice = function(options) {
+  $.fn.bootstrapChoice = function(options) {    
     var
-      defaults = {
+      defaults = {               
         modal: null
       , onClick: function(choice, button) { return false; }
       , getChoice: function(button) { return $(button).data('choice'); } // Default: return the data-choice attribute value
@@ -933,20 +934,20 @@ $(function () { 'use strict'
       ;
 
     return this.each(function() {
-      var
+      var 
         settings = $.extend({}, defaults, options)
       , $this = $(this)
       , $modal = $(settings.modal);
-        ;
+        ; 
 
-      if(!settings.modal) alert('No modal set (.modal == null). This is not allowed!');
+      if(!settings.modal) alert('No modal set (.modal == null). This is not allowed!');      
 
       $modal.on('show.bs.modal', function() { settings.onShow.apply(null, [] ); });
       $modal.on('shown.bs.modal', function() { settings.onShown.apply(null, [] ); });
       $modal.on('hide.bs.modal', function() { settings.onHide.apply(null, [] ); });
       $modal.on('hidden.bs.modal', function() { settings.onHidden.apply(null, [] ); });
 
-      $modal.on('click', 'button', function() {
+      $modal.on('click', 'button', function() {          
           var choice = null;
           var closeModal = false;
           if('modal'==$(this).data('bs-dismiss')) return;
@@ -955,10 +956,10 @@ $(function () { 'use strict'
           if(closeModal) $modal.modal('hide');
       });
 
-      $this.on('click', function() {
+      $this.on('click', function() { 
         $modal.modal('show');
       });
-
+      
     });
   }
 
@@ -970,9 +971,9 @@ $(function () { 'use strict'
 <script language="javascript" type="text/javascript">
 $(function () { 'use strict'
   var
-    isSocketExtensionLoaded = <?php echo $isSocketExtensionLoaded; ?>
+    isSocketExtensionLoaded = <?php echo $isSocketExtensionLoaded; ?>    
 
-  , isDebugEnabled = <?php echo $isDebugEnabled; ?>
+  , isDebugEnabled = <?php echo $isDebugEnabled; ?>  
 
   , baseAddress = '<?php echo $_SERVER["PHP_SELF"]; ?>'
 
@@ -1010,9 +1011,9 @@ $(function () { 'use strict'
       return params;
     }
 
-  , showNotification = function(message, style, autoClose) {
+  , showNotification = function(message, style, autoClose) {     
       var $notificationContainer = $('#notificationContainer');
-
+ 
       if (!message || ''===message) {
         $notificationContainer.empty();
         return;
@@ -1030,7 +1031,7 @@ $(function () { 'use strict'
         ,   '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" ></button>',
         , '</div>'
         ].join('')).hide()
-
+        
       , hideNotification = function () {
           $notification.slideUp(400, function () { $notification.remove() });
         }
@@ -1109,7 +1110,7 @@ $(function () { 'use strict'
       return $('#hostTable tbody tr').map(function() { return $(this).data('wol'); }).get();
     }
 
-  , addHost = function(mac,host,cidr,port,comment) {
+  , addHost = function(mac,host,cidr,port,comment) {      
       var
         hostConfig = {
           mac: mac
@@ -1119,7 +1120,6 @@ $(function () { 'use strict'
         , comment: comment
         }
       , jsonConfig = JSON.stringify(hostConfig);
-        ;
 
       hostConfig['dataWol'] = jsonConfig;
       var tr = renderTemplate($('#tableRowTemplate').html(), hostConfig);
@@ -1172,9 +1172,10 @@ $(function () { 'use strict'
 
   , updateUi = function() {
       if(unsavedChangesCount) {
-        $('#pageContainer').addClass('unsaved-changes')
+		saveButton.style.display = 'block';
+		document.getElementById('saveButton').addEventListener('click', saveConfigToServer);
       } else {
-        $('#pageContainer').removeClass('unsaved-changes')
+		saveButton.style.display = 'none';
       }
     }
 
@@ -1195,7 +1196,7 @@ $(function () { 'use strict'
           url: baseAddress
         , type: 'GET'
         , data: { debug: isDebugEnabled, aop: 'HOST.CHECK', host:wolInfo.host }
-        , beforeSend: function(/* xhr */) {
+        , beforeSend: function(/* xhr */) { 
             $i
               .removeClass('fa-question fa-eye fa-thumbs-up fa-thumbs-down text-danger text-success')
               .addClass('fa-eye text-muted')
@@ -1219,14 +1220,14 @@ $(function () { 'use strict'
                   .removeClass('fa-eye text-muted')
                   .addClass('fa-thumbs-down text-danger')
                 ;
-              }
+              } 
             }
           }
         });
       }
     }
     ;
-
+        
 
 
   /**
@@ -1236,7 +1237,7 @@ $(function () { 'use strict'
     setTimeout(saveConfigToServer, 10);
   })
 
-  $('#loadConfigFromServer').bootstrapChoice({
+  $('#loadConfigFromServer').bootstrapChoice({ 
     modal: '#chooseLoadConfigModal'
   , onClick: function(choice) {
       var rowCount = $('#hostTable tbody tr').length;
@@ -1244,8 +1245,8 @@ $(function () { 'use strict'
       if(rowCount != 0) makeDirty();
       loadConfigFromServer((rowCount != 0));
       return true;
-    }
-  });
+    }   
+  });  
 
   $('#exportModal').on('show.bs.modal', function() {
     $('#exportJson').val(JSON.stringify(getConfiguration()));
@@ -1284,7 +1285,7 @@ $(function () { 'use strict'
 
   $('#hostTable tbody').on('click', '.btnRemoveHost', function(event) {
         event.preventDefault();
-        var
+        var 
       $tr = $(this).closest('tr')
     , wolData = $tr.data('wol')
       ;
@@ -1301,7 +1302,7 @@ $(function () { 'use strict'
 
   $('#hostTable tbody').on('click', '.btnWakeUpHost', function() {
         event.preventDefault();
-        var
+        var 
       $tr = $(this).closest('tr')
     , wolData = $tr.data('wol')
       ;
@@ -1342,8 +1343,8 @@ $(function () { 'use strict'
 
     if(''==mac) msg = msg + '<br/>The <strong>mac-address</strong> field must not be empty.'
     if(''==host) msg = msg + '<br/>The <strong>host</strong> field must not be empty.'
-    if(''==cidr) msg = msg + '<br/>The <strong>cidr</strong> field must not be empty.'
-    if(''==port) msg = msg + '<br/>The <strong>port</strong> field must not be empty.'
+    if(''==cidr) cidr = '255.255.255.255'
+    if(''==port) port = '9'
 
     if(msg) {
       showNotification('Please check your input:' + msg, 'warning', 10000);
@@ -1362,7 +1363,7 @@ $(function () { 'use strict'
   , data: {
      'en-US': {
         'title': 'Wake On Lan'
-      , 'tools': 'Tools'
+      , 'options': 'Options'
       , 'download_config': 'Download Configuration'
       , 'export_config': 'Export Configuration'
       , 'import_config': 'Import Configuration'
@@ -1385,7 +1386,7 @@ $(function () { 'use strict'
       }
     , 'de-DE': {
         'title': 'Wake On Lan'
-      , 'tools': 'Werkzeuge'
+      , 'options': 'Optionen'
       , 'download_config': 'Konfiguration herunterladen'
       , 'export_config': 'Konfiguration exportieren'
       , 'import_config': 'Konfiguration Importieren'
@@ -1404,7 +1405,7 @@ $(function () { 'use strict'
       }
     , 'es-ES': {
         'title': 'Wake On Lan'
-      , 'tools': 'Instrumentos'
+      , 'options': 'Opciones'
       , 'download_config': 'Descargar configuración'
       , 'export_config': 'Exportar configuración'
       , 'import_config': 'Importar configuración'
@@ -1430,7 +1431,7 @@ $(function () { 'use strict'
     return new bootstrap.Tooltip(tooltipTriggerEl)
    });
 
-  /**
+  /** 
    * Enable sorting the table rows with drag&drop
    */
   $("#hostTable tbody").sortable({
@@ -1459,7 +1460,7 @@ $(function () { 'use strict'
   // Show warning if the sockets extension is not available in php
   if(!isSocketExtensionLoaded) showNotification( $('#textNoSocketExtensionLoaded').html(), 'warning' );
 
-  // Finally load the configuration from the server
+  // Finally load the configuration from the server 
   setTimeout(loadConfigFromServer, 10);
 
   // Start updating the host state
@@ -1467,5 +1468,9 @@ $(function () { 'use strict'
 
 });
 </script>
+
+
+        <button id="saveButton" class="btn btn-primary" style="display: none;">save changes</button>
+ 
   </body>
 </html>
