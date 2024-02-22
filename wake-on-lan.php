@@ -1,16 +1,7 @@
 <?php 
 /**
- * PHPWOL - Send wake on lan magic packet from php.
- * PHP Version 5.6.28
-
- * @package   PHPWOL
- * @author    Andreas Schaefer <asc@schaefer-it.net>
- * @copyright 2021 Andreas Schaefer
- * @license   https://github.com/AndiSHFR/wake-on-lan.php/blob/master/LICENSE MIT License
- * @see       https://github.com/andishfr/wake-on-lan.php/ GitHub project
- * @note      This program is distributed in the hope that it will be useful - WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.
+ * license   https://github.com/AndiSHFR/wake-on-lan.php/blob/master/LICENSE MIT License
+ * fork of https://github.com/andishfr/wake-on-lan.php/ GitHub project
  */
 
 /**
@@ -191,15 +182,15 @@ function endWithErrorMessage($message)
 
 function endWithJsonResponse($responseData, $filename = null)
 {
-    if ($responseData) {
-        array_walk_recursive(
-            $responseData, function (&$value, &$key) {
-                if (is_string($value)) {
-                    $value = mb_convert_encoding($value, 'UTF-8');
-                }
+if ($responseData) {
+    array_walk_recursive(
+        $responseData, function (&$value, $key) {
+            if (is_string($value)) {
+                $value = mb_convert_encoding($value, 'UTF-8');
             }
-        );
-    }
+        }
+    );
+}
 
     $jsonString = json_encode($responseData, JSON_PRETTY_PRINT);
 
