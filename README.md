@@ -1,12 +1,16 @@
-# wake-on-lan.php
+# wake-on-lan_plus.php
 Send magic packet from php to wake up a host using "Wake on Lan"
+forked from AndiSHFR/wake-on-lan.php
 
 ![Wake-On_Lan Screenshot](wake-on-lan.png "wake-on-lan screenshot")
 
-```wake-on-lan.php``` started as a ___one file drop in___ tool for waking up computers when they are suspended.
-
 _Note_:
-As there where numerous issues using this code, even it worked fine in my environment, at the end of 2021 i decided to refactor the whole thing.
+I forked this project to make make it work under php8.3 and adapt it to my needs: 
+  * implemented some value checks before adding new entries
+  * adding a save button, when changes are made
+  * renamed Tools to Options
+  * small changes to the ui
+  * newer bootstrap version
 
 
 # Changes of the 2021 Release
@@ -21,7 +25,7 @@ As there where numerous issues using this code, even it worked fine in my enviro
 
 
 # Requirements
-* PHP5 or PHP7
+* PHP8
 * Internet connection for CDN includes (.js, .css)
 * Sockets extension must be enabled
 * Web server must be allowed to write to the file ``config.json``
@@ -29,9 +33,7 @@ As there where numerous issues using this code, even it worked fine in my enviro
 
 # Installation
 * Either clone the repository or download the zip file
-* Copy the file ```wake-on-lan.php``` to a directory on your web server
-
-_Note_: If you need to copy the file to a remote machine use ``scp`` or ``sftp``.
+* Copy the file ```wake-on-lan_plus.php``` to a directory on your web server
 
 
 # Enabling the php sockets extension
