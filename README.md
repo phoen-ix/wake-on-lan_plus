@@ -15,6 +15,7 @@ forked from AndiSHFR/wake-on-lan.php
 
     # docker compose
     easiest way is to clone the repository, (optionally) rename example.env to .env and adjust
+    
     docker compose up -d
 
 
