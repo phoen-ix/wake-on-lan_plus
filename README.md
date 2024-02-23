@@ -15,6 +15,12 @@ forked from AndiSHFR/wake-on-lan.php
 
     # docker compose
     easiest way is to clone the repository, (optionally) rename example.env to .env and adjust
+    you also need to make a maklavan network, fitting yourt network
+    docker network create -d macvlan \
+    --subnet=192.168.1.0/24 \
+    --gateway=192.168.1.1 \
+    -o parent=eth0 macvlan_network
+
     
     docker compose up -d
 
