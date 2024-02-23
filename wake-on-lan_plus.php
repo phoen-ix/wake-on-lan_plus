@@ -404,6 +404,11 @@ if ("CONFIG.GET" === $ajaxOperation) {
                         <li style="display: none;"><a id="saveConfigToServer" class="dropdown-item" href="#"><i
                                         class="fa fa-save"></i> <span
                                         data-lang-ckey="save_config">Save Configuration</span></a></li>
+							<hr class="dropdown-divider">
+						<li><a id="backupConfig" class="dropdown-item" data-bs-toggle="modal"
+                               data-bs-target="#backupModal" href="#"><i class="fa fa-clone"></i> <span
+                                        data-lang-ckey="backup_config">Backup</span></a></li>
+
                     </ul>
                 </div>
             </li>
@@ -585,6 +590,65 @@ if ("CONFIG.GET" === $ajaxOperation) {
         </div>
     </div>
 </div>
+
+
+
+
+
+
+
+<div class="modal fade" id="backupModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+     aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Backup Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="backupFileList" class="form-label">Available Backups</label>
+                    <ul id="backupFileList" class="list-group">
+                        <!-- JavaScript will populate this list with file names -->
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<?php
+$directory = './backup/';
+$jsonFiles = glob($directory . '*.json'); // Search for json files in the backup directory
+$fileNames = array_map('basename', $jsonFiles); // Extract just the file names
+?>
+
+<!-- Embedded JavaScript to populate the list -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // PHP array is converted into a JavaScript array
+    const fileNames = <?php echo json_encode($fileNames); ?>;
+    
+    const listElement = document.getElementById("backupFileList");
+    fileNames.forEach(fileName => {
+        const listItem = document.createElement("li");
+        listItem.className = "list-group-item";
+        listItem.textContent = fileName;
+        listElement.appendChild(listItem);
+    });
+});
+</script>
+
+
+
+
+
+
+
 
 
 <script id="tableRowTemplate" type="text/template">
