@@ -337,15 +337,15 @@ if ("CONFIG.GET" === $ajaxOperation) {
             cursor: pointer;
         }
 
-#cancelButton, #saveButton {
-    display: inline-block; /* Display buttons inline */
-    vertical-align: middle; /* Align buttons vertically */
-    margin-top: 20px; /* Adjust margin top as needed */
-}
+        #cancelButton, #saveButton {
+            display: inline-block; /* Display buttons inline */
+            vertical-align: middle; /* Align buttons vertically */
+            margin-top: 20px; /* Adjust margin top as needed */
+        }
 
-#cancelButton {
-    margin-right: 10px; /* Add space between buttons */
-}
+        #cancelButton {
+            margin-right: 10px; /* Add space between buttons */
+        }
 
         #pageContainer {
             padding: 5px;
@@ -419,15 +419,15 @@ if ("CONFIG.GET" === $ajaxOperation) {
         </colgroup>
         <thead>
         <tr>
-        <th></th>
-        <th data-lang-ckey="mac_address">MAC-Address</th>
-        <th data-lang-ckey="ip_or_hostname">Ip or Hostname</th>
-        <th data-lang-ckey="subnet">Subnet CIDR</th>
-        <th data-lang-ckey="port">Port</th>
-        <th data-lang-ckey="comment">Comment</th>
-        <th></th>
+            <th></th>
+            <th data-lang-ckey="mac_address">MAC-Address</th>
+            <th data-lang-ckey="ip_or_hostname">Ip or Hostname</th>
+            <th data-lang-ckey="subnet">Subnet CIDR</th>
+            <th data-lang-ckey="port">Port</th>
+            <th data-lang-ckey="comment">Comment</th>
+            <th></th>
         </tr>
-        <thead>
+        </thead>
 
         <tbody>
         </tbody>
@@ -1229,9 +1229,15 @@ if ("CONFIG.GET" === $ajaxOperation) {
                         } else {
                             makeClean();
                             showNotification($('#textConfigSavedSuccessfully').html(), 'success', 3000);
+
                         }
                     }
                 });
+                document.getElementById('mac').value = '';
+                document.getElementById('host').value = '';
+                document.getElementById('cidr').value = '';
+                document.getElementById('port').value = '';
+                document.getElementById('comment').value = '';
             }
 
             , loadConfigFromServer = function (doNotMakeClean) {
@@ -1264,16 +1270,16 @@ if ("CONFIG.GET" === $ajaxOperation) {
             , updateUi = function () {
                 if (unsavedChangesCount) {
                     saveButton.style.display = 'block';
-					cancelButton.style.display = 'block';
+                    cancelButton.style.display = 'block';
                     document.getElementById('saveButton').addEventListener('click', saveConfigToServer);
-					document.getElementById('cancelButton').addEventListener('click', function() {
-											makeClean();
-											location.reload();
-											});
+                    document.getElementById('cancelButton').addEventListener('click', function () {
+                        makeClean();
+                        location.reload();
+                    });
                     document.getElementById('saveConfigToServer').closest('li').style.display = 'list-item';
                 } else {
                     saveButton.style.display = 'none';
-					cancelButton.style.display = 'none';
+                    cancelButton.style.display = 'none';
                     document.getElementById('saveConfigToServer').closest('li').style.display = 'none';
                 }
             }
