@@ -1,5 +1,4 @@
-# wake-on-lan_plus.php
-Send magic packet from php to wake up a host using "Wake on Lan"
+# wake-on-lan_plus
 forked from AndiSHFR/wake-on-lan.php
 
 ![Wake-On_Lan Screenshot](wake-on-lan_plus.png "wake-on-lan screenshot")
@@ -7,18 +6,23 @@ forked from AndiSHFR/wake-on-lan.php
 # Changes of the 2024 wake-on-lan_plus Release
   * now works with php 8.3
   * implemented some value checks for mac-address, CIDR and port before adding new entries
-  * adding a save button, when changes are made
+  * adding a save and cancel button, when changes are made
   * renamed Tools to Options
   * small changes to the ui
   * newer bootstrap version
   * added TeamViewer to the host udp port check
   * default values for CIDR(24) and port(9) if left empty
 
+    # docker compose
+    easiest way is to clone the repository, (optionally) rename example.env to .env and adjust
+    docker compose up -d
+
 
 # Requirements
 * PHP8
 * Internet connection for CDN includes (.js, .css)
 * Sockets extension must be enabled
+* php-mbstring needs to be installed
 * Web server must be allowed to write to the file ``config.json``
 
 
