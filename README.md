@@ -2,11 +2,11 @@
 Send magic packet from php to wake up a host using "Wake on Lan"
 forked from AndiSHFR/wake-on-lan.php
 
-![Wake-On_Lan Screenshot](wake-on-lan.png "wake-on-lan screenshot")
+![Wake-On_Lan Screenshot](wake-on-lan_plus.png "wake-on-lan screenshot")
 
 # Changes of the 2024 wake-on-lan_plus Release
   * now works with php 8.3
-  * implemented some value checks for mac-address, CIDR and portbefore adding new entries
+  * implemented some value checks for mac-address, CIDR and port before adding new entries
   * adding a save button, when changes are made
   * renamed Tools to Options
   * small changes to the ui
