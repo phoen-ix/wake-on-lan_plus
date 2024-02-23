@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  wake-on-lan_plus:
+    image: phoen9/wake-on-lan_plus:${WAKE_ON_LAN_PLUS_IMAGE:-latest}
+    container_name: ${CONTAINER_NAME:-wake-on-lan_plus}
+    ports:
+      - "${HOST_PORT:-3880}:${CONTAINER_PORT:-80}"
+    networks:
+      - ${NETWORK_NAME:-default}
+    volumes:
+      - ./wake-on-lan_plus.php:/var/www/html/index.php:ro
+      - './volume/config/:/var/www/html/'
+
+networks:
+  default:
+    driver: bridge
+  br_wake-on-lan_plus:
+    driver: ${NETWORK_DRIVER:-bridge}
