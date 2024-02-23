@@ -1,7 +1,8 @@
 <?php 
 /**
- * license   https://github.com/AndiSHFR/wake-on-lan.php/blob/master/LICENSE MIT License
- * fork of https://github.com/andishfr/wake-on-lan.php/ GitHub project
+ * Github https://github.com/phoen-ix/wake-on-lan_plus
+ * fork of https://github.com/andishfr/wake-on-lan.php/ from Andreas Schaefer
+ * license   https://github.com/phoen-ix/wake-on-lan_plus/blob/master/LICENSE MIT License
  */
 
 /**
@@ -104,7 +105,7 @@ function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut)
     if (!$wolResult && "" != $port) {
         $port = intval($port);
         if ($port < 0 || $port > 65535) {
-            $wolResult = "Error: Invalid port value of " . $port . ". Port must between 1 and 65535.";
+            $wolResult = "Error: Invalid port value of " . $port . ". Port must be between 1 and 65535.";
             $debugOut[] = __LINE__ . " : " . $wolResult;
         }
     }
@@ -254,6 +255,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
         "22" => "22 (SSH)",
         "80" => "80 (HTTP)",
         "443" => "443 (HTTPS)",
+		"5938" => "5938 (TeamViewer)",
     ];
     $host = safeGet($_GET, "host", null);
     if (!$host) {
@@ -336,13 +338,9 @@ if ("CONFIG.GET" === $ajaxOperation) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Web based user interface to send wake-on-lan magic packets.">
-    <meta name="author" content="Andreas Schaefer">
     <title data-lang-ckey="title">Wake On Lan</title>
-
-    <link rel="canonical" href="https://www.github.com/AndiSHFR/wake-on-lan.php">
-
     <link href="//fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet"> 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
         
     <style>
@@ -393,7 +391,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
                 <li><a id="importConfig" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importModal" href="#"><i class="fa fa-file-import"></i> <span data-lang-ckey="import_config">Import Configuration</span></a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a id="loadConfigFromServer" class="dropdown-item" href="#"><i class="fa fa-folder-open"></i> <span data-lang-ckey="load_config">Load Configuration</span></a></li>
-                <li><a id="saveConfigToServer" class="dropdown-item" href="#"><i class="fa fa-save"></i> <span data-lang-ckey="save_config">Save Configuration</span></a></li>
+                <li style="display: none;"><a id="saveConfigToServer" class="dropdown-item" href="#"><i class="fa fa-save"></i> <span data-lang-ckey="save_config">Save Configuration</span></a></li>
               </ul>
             </div>
           </li>          
@@ -411,7 +409,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
           <th></th>
           <th data-lang-ckey="mac_address">MAC-Address</th>
           <th data-lang-ckey="ip_or_hostname">Ip or Hostname</th>
-          <th data-lang-ckey="subnet">Subnet</th>
+          <th data-lang-ckey="subnet">Subnet CIDR</th>
           <th data-lang-ckey="port">Port</th>
           <th data-lang-ckey="comment">Comment</th>
           <th></th>
@@ -1165,8 +1163,10 @@ $(function () { 'use strict'
       if(unsavedChangesCount) {
 		saveButton.style.display = 'block';
 		document.getElementById('saveButton').addEventListener('click', saveConfigToServer);
+		document.getElementById('saveConfigToServer').closest('li').style.display = 'list-item';
       } else {
 		saveButton.style.display = 'none';
+		document.getElementById('saveConfigToServer').closest('li').style.display = 'none';
       }
     }
 
@@ -1331,10 +1331,44 @@ $(function () { 'use strict'
     , comment = $('#comment').val()
     , msg = ''
       ;
+	if (/^\d+$/.test(cidr)) {  
+	if (typeof cidr === 'string') cidr = parseInt(cidr, 10); // Convert to number if cidr is a string
+
+	if (!(Number.isInteger(cidr) && cidr >= 0 && cidr <= 32)) {
+    msg = msg + '<br/>The <strong>cidr</strong> value is not valid. It must be a number between 0 and 32.';
+}
+	} else {
+		msg = msg + '<br/>The <strong>cidr</strong> value is not valid. It must be a purely numeric value.';
+	}
+	
+	if (/^\d+$/.test(port)) {  
+    if (typeof port === 'string') port = parseInt(port, 10); // Convert to number if port is a string
+
+	if (!(Number.isInteger(port) && port > 0 && port <= 65535)) {
+    msg = msg + '<br/>The <strong>port</strong> value is not valid. Port must be between 1 and 65535.';
+}
+	} else {
+				msg = msg + '<br/>The <strong>port</strong> value is not valid. It must be a purely numeric value.';
+	}
+	
+// Remove any '-' or ':' from the mac variable
+var cleanedMac = mac.replace(/[-:]/g, '');
+// Check if the cleanedMac has exactly 12 hexadecimal characters
+if (!/^[0-9A-Fa-f]{12}$/.test(cleanedMac)) {
+    msg = msg + '<br/>The <strong>mac-address</strong> is not valid.';
+}
+ 
+	  if (mac.length === 12) {
+      const isValidMAC = /^[0-9A-Fa-f]{12}$/.test(mac);
+    if (isValidMAC) {
+      // Format the MAC address as 00:00:00:00:00:00
+      mac=mac.match(/.{2}/g).join('-');
+      } 
+    } 
 
     if(''==mac) msg = msg + '<br/>The <strong>mac-address</strong> field must not be empty.'
     if(''==host) msg = msg + '<br/>The <strong>host</strong> field must not be empty.'
-    if(''==cidr) cidr = '255.255.255.255'
+    if(''==cidr) cidr = '24'
     if(''==port) port = '9'
 
     if(msg) {
@@ -1362,7 +1396,7 @@ $(function () { 'use strict'
       , 'save_config': 'Save Configuration'
       , 'mac_address': 'MAC-Address'
       , 'ip_or_hostname': 'IP or Hostname'
-      , 'subnet': 'Subnet'
+      , 'subnet': 'Subnet CIDR'
       , 'port': 'Port'
       , 'comment': 'Comment'
       , 'c_load_configuration': 'Load Configuration'
@@ -1379,7 +1413,7 @@ $(function () { 'use strict'
       , 'save_config': 'Konfiguration speichern'
       , 'mac_address': 'MAC-Addresse'
       , 'ip_or_hostname': 'IP oder Hostname'
-      , 'subnet': 'Subnet'
+      , 'subnet': 'Subnet CIDR'
       , 'port': 'Port'
       , 'comment': 'Bemerkung'
       }
@@ -1393,7 +1427,7 @@ $(function () { 'use strict'
       , 'save_config': 'Guardar configuración'
       , 'mac_address': 'MAC-Dirección'
       , 'ip_or_hostname': 'IP o nombre de host'
-      , 'subnet': 'Subred'
+      , 'subnet': 'Subred CIDR'
       , 'port': 'Puerto'
       , 'comment': 'Comentario'
       }
@@ -1445,7 +1479,7 @@ $(function () { 'use strict'
 </script>
 
 
-        <button id="saveButton" class="btn btn-primary" style="display: none;">save changes</button>
+   <button id="saveButton" class="btn btn-success" style="display: none;">save</button>
  
   </body>
 </html>
