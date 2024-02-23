@@ -52,8 +52,8 @@ To add a host simply fill the edit fields at the bottom of the table and press t
 You need to fill the follwing input fields:
 
   * _Mac-Address_ - Type the mac address of the host you wish to wake. The values can be separated by a dash (-) or a colon (:) - both will work.
+                    If no seperator is entered, (-) is used as a seperator.
   * _IP-Address_ - Type the ip address of the host. This is required to query the "host up" state and calculate the broadcast address of the magic packet.
-  * _Subnet Size_ - type in the subnet size in CIDR notation. 
 
 
 ## Removing a host
@@ -61,13 +61,14 @@ To remove a host simply click on the trashcan icon of the host you want to remov
 
 
 ## Saving the configuration
-You can save the configuration by choosing _Tools_ -> _Save COnfiguration_.
+You can save the configuration by choosing _Options_ -> _Save Configuration_ or the green save button at the center of the screen.
+Saving will only be available after changes are made.
 
-The configuration will be saved to a json file in the same directory as of ```wake-on-lan.php```.
+The configuration will be saved to a json file in the same directory as of ```wake-on-lan_plus.php```.
 
 The web server needs permission to write to the file. You you may need to adjust folder permission accordingly.
 
-# Tools Dropdown Menu
+# Options Dropdown Menu
 
 * _Download Configuration_ - This will download the ``config.json``file to your computer.
 
@@ -85,12 +86,5 @@ The web server needs permission to write to the file. You you may need to adjust
 * _Remove_ - delete the row from the configuration. The data of the deleted row is placed in the input fields for adding a new host. If you accidently removed a host you can simply press _Add_ again to add it again.
 * _Add_ - adds a new entry to the table. Fill in the text boxes and press _Add_.
 
-
-# Caveat
-
-  <s>Does not run under linux. Because the linux user used to run php code on the server side usually has very limited permission it cannot create the raw socket to send the magic packet.</s>
-
-__Note__: This caveat no longer applies. Using the sockets extension ```wake-on-lan.php``` no longer suffers this shortcoming.
-
 # License
-```wake-on-lan.php``` is published under [MIT](LICENSE) license.
+```wake-on-lan_plus.php``` is published under [MIT](LICENSE) license.
