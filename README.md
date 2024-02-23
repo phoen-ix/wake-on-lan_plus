@@ -4,24 +4,15 @@ forked from AndiSHFR/wake-on-lan.php
 
 ![Wake-On_Lan Screenshot](wake-on-lan.png "wake-on-lan screenshot")
 
-_Note_:
-I forked this project to make make it work under php8.3 and adapt it to my needs: 
-  * implemented some value checks before adding new entries
+# Changes of the 2024 wake-on-lan_plus Release
+  * now works with php 8.3
+  * implemented some value checks for mac-address, CIDR and portbefore adding new entries
   * adding a save button, when changes are made
   * renamed Tools to Options
   * small changes to the ui
   * newer bootstrap version
-
-
-# Changes of the 2021 Release
-
-
-  * Now it is _really_ a __one file drop in__.
-  * Version update for _bootstrap_ and _jquery_.
-  * Configuration is now saved to the backend. (Make sure web server can write to it.)
-  * Host check is now done via connection test to _ssh_, _rdp_, _http_ and _https_.
-  * MAC address can now be typed in using dash (-) or colon (:) - both will work.
-  * No longer requires the raw-Sockets feature. All is done via the sockets extension in php.
+  * added TeamViewer to the host udp port check
+  * default values for CIDR(24) and port(9) if left empty
 
 
 # Requirements
@@ -50,7 +41,7 @@ Here are basic steps for linux users:
 
 
 # Setup
-Open your favorite browser and navigate to the ```wake-on-lan.php``` url.
+Open your favorite browser and navigate to the ```wake-on-lan_plus.php``` url.
 Now you can start adding your the hosts you want to wake.
 
 # General Operation
