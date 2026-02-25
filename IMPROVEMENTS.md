@@ -24,7 +24,7 @@ The following low-effort, high-impact improvements have been implemented:
 | # | Category | Improvement | Status |
 |---|----------|-------------|--------|
 | 1 | Security | CSRF token rotation after use | Done |
-| 2 | Security | Content-Security-Policy header | Done |
+| 2 | Security | Content-Security-Policy header | Removed (incompatible with inline scripts and template engine) |
 | 3 | Security | Stricter host validation (SSRF) | Done |
 | 4 | Security | MAC address regex anchoring | Done |
 | 5 | Robustness | JSON error handling in CONFIG.GET | Done |
@@ -55,14 +55,10 @@ function rotateCsrfToken()
 }
 ```
 
-#### Content-Security-Policy Header
+#### Content-Security-Policy Header — Removed
 **Priority:** High | **Effort:** Low | **Impact:** High
 
-A CSP header is now set for all HTML responses, restricting script/style/font/image sources to trusted origins only.
-
-```
-Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self'
-```
+CSP was implemented but removed because the app requires `unsafe-inline` (inline PHP-to-JS bridge via `window.WOL_CONFIG`) and `unsafe-eval` (template engine uses `new Function()`). With both exceptions, CSP provides negligible XSS protection. Revisit if the frontend is refactored to eliminate inline scripts and `eval`.
 
 #### Stricter Host Validation (SSRF Prevention)
 **Priority:** High | **Effort:** Low | **Impact:** High
@@ -466,13 +462,13 @@ Document all supported environment variables in the README and `example.env`:
 
 ## Summary
 
-| Category | Completed | Planned | Total |
-|----------|-----------|---------|-------|
-| Security | 4 | 5 | 9 |
-| Code Quality | 2 | 4 | 6 |
-| Features | 0 | 6 | 6 |
-| Docker | 2 | 4 | 6 |
-| UX | 2 | 5 | 7 |
-| Testing | 0 | 5 | 5 |
-| Ops | 1 | 4 | 5 |
-| **Total** | **11** | **33** | **44** |
+| Category | Completed | Removed | Planned | Total |
+|----------|-----------|---------|---------|-------|
+| Security | 3 | 1 (CSP) | 5 | 9 |
+| Code Quality | 2 | 0 | 4 | 6 |
+| Features | 0 | 0 | 6 | 6 |
+| Docker | 2 | 0 | 4 | 6 |
+| UX | 2 | 0 | 5 | 7 |
+| Testing | 0 | 0 | 5 | 5 |
+| Ops | 1 | 0 | 4 | 5 |
+| **Total** | **10** | **1** | **33** | **44** |

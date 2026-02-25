@@ -31,11 +31,10 @@ These features did **not** exist in the original:
 |---|---|---|
 | **CSRF protection** | 32-byte random hex token stored in session, validated on CONFIG.SET and HOST.WAKEUP via `X-CSRF-TOKEN` header | `includes/auth.php`, `index.php`, `assets/app.js` |
 | **CSRF token rotation** | Token is regenerated after every successful CONFIG.SET and HOST.WAKEUP; new token returned in JSON response and picked up by JS client | `includes/auth.php`, `index.php`, `assets/app.js` |
-| **Content-Security-Policy** | CSP header restricts sources to `self` + trusted CDN origins (jsdelivr, googleapis, gstatic); `unsafe-inline` for styles (Bootstrap requirement) | `index.php:175` |
 | **Rate limiting** | Session-based, per action, configurable via env vars (see Environment Variables) | `includes/functions.php`, `index.php` |
 | **HTTP Basic Auth** | Optional, via `WOL_USERNAME`/`WOL_PASSWORD` env vars, timing-safe comparison | `includes/auth.php` |
 | **SSRF prevention** | Strict allowlist on HOST.CHECK `host` param — only `[a-zA-Z0-9.\-:]` allowed, max 253 chars | `index.php:101-104` |
-| **Security headers** | `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Content-Security-Policy` | `index.php:170-175`, `includes/functions.php:192-194` |
+| **Security headers** | `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy` | `index.php:170-174`, `includes/functions.php:192-194` |
 | **`.htaccess` rules** | Blocks direct access to `config.json`, the old monolith file, and the `includes/` directory | `.htaccess`, `includes/.htaccess` |
 | **JSON validation** | CONFIG.SET validates that input is an array of objects with `mac` and `host` fields; CONFIG.GET uses `JSON_THROW_ON_ERROR` | `index.php:36-40`, `index.php:64-72` |
 | **Atomic file writes** | Config saves write to a temp file then `rename()` for crash-safe atomic swap | `index.php:75-79` |
@@ -78,8 +77,8 @@ These features did **not** exist in the original:
   - CONFIG.SET: Atomic writes (temp file + rename), CSRF rotation, new token in response
   - HOST.CHECK: Strict allowlist SSRF validation
   - HOST.WAKEUP: CSRF rotation, new token in response
-- **Lines 170-175**: Security headers for HTML responses (including CSP)
-- **Lines 176-477**: Full HTML page — Bootstrap 5.3.3 layout, responsive table, modals, JS includes
+- **Lines 170-174**: Security headers for HTML responses
+- **Lines 175-476**: Full HTML page — Bootstrap 5.3.3 layout, responsive table, modals, JS includes
 
 ### `includes/auth.php`
 - **Lines 6-8**: Session initialization
@@ -187,8 +186,8 @@ Rate limits are configurable via environment variables (see above). Defaults:
 5. **Legacy file** — The original `wake-on-lan_plus.php` monolith is kept in the repo for reference but blocked from web access. It can be safely deleted.
 6. **Config backups** — The entrypoint creates timestamped backups in `config_backups/` on container start (last 5 kept). These are inside the container; map a volume to persist them.
 7. **Dark mode** — Follows system preference via `prefers-color-scheme`. No manual toggle yet.
-8. **CSP `unsafe-inline` for styles** — Required by Bootstrap's inline style attributes. Cannot be removed without refactoring Bootstrap usage.
-9. **Future improvements** — See `IMPROVEMENTS.md` for a comprehensive roadmap of 33 planned improvements across 7 categories.
+8. **No CSP header** — Content-Security-Policy was removed because the app's inline PHP-to-JS bridge (`window.WOL_CONFIG`) and the template engine's use of `new Function()` require `unsafe-inline` and `unsafe-eval`, which negate CSP's value.
+9. **Future improvements** — See `IMPROVEMENTS.md` for a comprehensive roadmap of planned improvements across 7 categories.
 
 ---
 
@@ -207,7 +206,6 @@ php tests/test_functions.php
 ### Modifying Security Settings
 - Rate limits: Set via `WOL_RATE_LIMIT_*` environment variables, or adjust defaults in `index.php:24-27`
 - CSRF: Logic in `includes/auth.php` — `generateCsrfToken()`, `validateCsrfToken()`, `rotateCsrfToken()`
-- CSP: Header string in `index.php:175` — update when adding new CDN origins
 - Auth: Controlled by environment variables, logic in `includes/auth.php`
 
 ### Building the Docker Image

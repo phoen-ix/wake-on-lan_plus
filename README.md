@@ -19,11 +19,10 @@ This version is a security-hardened, modular rewrite based on the 2024 release. 
 ### Security
   * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via `X-CSRF-TOKEN` header
   * **CSRF token rotation** — tokens are regenerated after every successful state-changing operation; the new token is returned in the JSON response and picked up by the JavaScript client automatically
-  * **Content-Security-Policy header** — restricts script/style/font/image sources to `self` and trusted CDN origins
   * **Session-based rate limiting** per action, configurable via environment variables (see below)
   * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD` environment variables
   * **SSRF prevention** — strict allowlist validation on the HOST.CHECK `host` parameter (alphanumeric, dots, hyphens, colons only; max 253 chars)
-  * **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Content-Security-Policy`
+  * **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`
   * **`.htaccess` protections** — blocks direct web access to `config.json` and the old monolith file
   * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials
   * **JSON structure validation** on configuration saves
