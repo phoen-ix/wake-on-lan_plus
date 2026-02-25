@@ -1,102 +1,191 @@
 # wake-on-lan_plus
-forked from AndiSHFR/wake-on-lan.php
+Forked from [AndiSHFR/wake-on-lan.php](https://github.com/andishfr/wake-on-lan.php), maintained by [phoen-ix](https://github.com/phoen-ix/wake-on-lan_plus).
 
 ![Wake-On_Lan Screenshot](wake-on-lan_plus.png "wake-on-lan screenshot")
 
-# Changes of the 2024 wake-on-lan_plus Release
-  * now works with php 8.3
-  * implemented some value checks for mac-address, CIDR and port before adding new entries
-  * adding a save and cancel button, when changes are made
-  * renamed Tools to Options
-  * small changes to the ui
-  * newer bootstrap version
-  * added TeamViewer to the host udp port check
-  * default values for CIDR(24) and port(9) if left empty
+## What's New (Refactored Edition)
 
-    # docker compose
-    easiest way is to clone the repository, (optionally) rename example.env to .env and adjust
-    you also need to make a macvlan network, fitting your network (update docker-compose.yml)
-    
-    docker network create -d macvlan \
-    --subnet=192.168.1.0/24 \
-    --gateway=192.168.1.1 \
-    -o parent=eth0 macvlan_network
+This version is a security-hardened, modular rewrite based on the 2024 release. Key changes:
 
-    
-    docker compose up -d
+### Architecture
+  * Refactored from a single 1600-line monolith (`wake-on-lan_plus.php`) into a clean modular structure:
+    - `index.php` — Entry point, AJAX routing, and HTML
+    - `includes/auth.php` — Authentication and CSRF token management
+    - `includes/functions.php` — Core WoL functions and utilities
+    - `assets/app.js` — All client-side JavaScript
+    - `assets/style.css` — All CSS styles
+  * Unit test suite added (`tests/test_functions.php`)
 
+### Security
+  * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via `X-CSRF-TOKEN` header
+  * **Session-based rate limiting** per action (CONFIG.SET: 10/60s, HOST.CHECK: 30/60s, HOST.WAKEUP: 5/60s)
+  * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD` environment variables
+  * **SSRF prevention** — input validation on the HOST.CHECK `host` parameter
+  * **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`
+  * **`.htaccess` protections** — blocks direct web access to `config.json` and the old monolith file
+  * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials
+  * **JSON structure validation** on configuration saves
+  * **File locking** (`LOCK_EX`) on config file writes
+  * HOST.WAKEUP changed from GET to POST
 
-# Requirements
-* PHP8
-* Internet connection for CDN includes (.js, .css)
-* Sockets extension must be enabled
-* php-mbstring needs to be installed
-* Web server must be allowed to write to the file ``config.json``
+### Docker
+  * Switched from Ubuntu + PPAs to the official `php:8.3-apache` base image (smaller, simpler)
+  * `.htaccess` / `mod_rewrite` support enabled in the container
+  * Authentication environment variables passed through `docker-compose.yml`
 
+### From the 2024 Release
+  * PHP 8.3 compatibility
+  * Value checks for MAC address, CIDR, and port before adding entries
+  * Save and Cancel buttons appear when changes are made
+  * Renamed "Tools" to "Options"
+  * Bootstrap 5.3.3
+  * TeamViewer port (5938) added to host status checks
+  * Default values for CIDR (24) and port (9) if left empty
 
-# Installation
-* Either clone the repository or download the zip file
-* Copy the file ```wake-on-lan_plus.php``` to a directory on your web server
+---
 
+## Quick Start (Docker Compose)
 
-# Enabling the php sockets extension
-The way the php sockets extension is enabled slidely differes with every php installation.
+1. Clone the repository
+2. (Optional) Copy `example.env` to `.env` and adjust values
+3. Create a macvlan network matching your LAN:
 
-Here are basic steps for linux users:
+```bash
+docker network create -d macvlan \
+  --subnet=192.168.1.0/24 \
+  --gateway=192.168.1.1 \
+  -o parent=eth0 macvlan_network
+```
 
-  * Go to the directory that contains your ``php.ini``file.
-  * Open the file with text editor
-  * Search for the line ``;extension=sockets``
-  * Remove the trailing semicolon (;) to enable this feature.
-  * Save your ``php.ini``file
-  * Reload your webserver configuration.
+4. Update the `ipv4_address` in `docker-compose.yml` to a free IP on your network
+5. Start the container:
 
+```bash
+docker compose up -d
+```
 
-# Setup
-Open your favorite browser and navigate to the ```wake-on-lan_plus.php``` url.
-Now you can start adding your the hosts you want to wake.
+### Optional: Enable Authentication
 
-# General Operation
+Set credentials in your `.env` file or directly in `docker-compose.yml`:
 
-## Adding a host
-To add a host simply fill the edit fields at the bottom of the table and press the blue button with the plus sign.
+```env
+WOL_USERNAME=admin
+WOL_PASSWORD=your_secure_password
+```
 
-You need to fill the follwing input fields:
+Leave both empty to disable authentication.
 
-  * _Mac-Address_ - Type the mac address of the host you wish to wake. The values can be separated by a dash (-) or a colon (:) - both will work.
-                    If no seperator is entered, (-) is used as a seperator.
-  * _IP-Address_ - Type the ip address of the host. This is required to query the "host up" state and calculate the broadcast address of the magic packet.
+---
 
+## Requirements (Bare Metal)
 
-## Removing a host
-To remove a host simply click on the trashcan icon of the host you want to remove.
+  * PHP 8.x with the `sockets` and `mbstring` extensions enabled
+  * Apache with `mod_rewrite` and `AllowOverride All` (for `.htaccess` support)
+  * Internet connection for CDN includes (Bootstrap, jQuery, Font Awesome)
+  * Web server must be allowed to write to `config.json`
 
+## Installation (Bare Metal)
 
-## Saving the configuration
-You can save the configuration by choosing _Options_ -> _Save Configuration_ or the green save button at the center of the screen.
-Saving will only be available after changes are made.
+1. Clone the repository or download the zip file
+2. Copy the project files to a directory on your web server
+3. Ensure the web server can write to the directory (for `config.json`)
+4. Navigate to the `index.php` URL in your browser
 
-The configuration will be saved to a json file in the same directory as of ```wake-on-lan_plus.php```.
+### Enabling the PHP Sockets Extension
 
-The web server needs permission to write to the file. You you may need to adjust folder permission accordingly.
+  * Open your `php.ini` file
+  * Find the line `;extension=sockets`
+  * Remove the leading semicolon (`;`) to enable it
+  * Reload your web server
 
-# Options Dropdown Menu
+---
 
-* _Download Configuration_ - This will download the ``config.json``file to your computer.
+## Project Structure
 
-* _Export Configuration_ - open a modal window with the configuration as a json file. Copy the contents of the edit window and save the configuration as a file.
+```
+index.php                  Main entry point (AJAX routing + HTML UI)
+includes/
+  auth.php                 Authentication & CSRF token management
+  functions.php            Core WoL functions & utilities
+  .htaccess                Blocks direct web access to includes/
+assets/
+  app.js                   Client-side JavaScript application
+  style.css                CSS styles
+tests/
+  test_functions.php       Unit tests (run: php tests/test_functions.php)
+Dockerfile                 Docker image definition
+docker-compose.yml         Docker Compose orchestration
+entrypoint.sh              Docker entrypoint script
+example.env                Environment variable template
+.htaccess                  Protects config.json and legacy files
+```
 
-* _Import Configuration_ - open a modal window with a text box. Paste your configuration into the text box and click on __Import__.
+---
 
-* _Load Configuration_ - Load the configuration from the ``config.json``file from the web server.
+## Usage
 
-* _Save Configuration_ - Save the configuration to the file ``config.json`` on the web server. Make sure the web server process is allowed to write to the file.
+### Adding a Host
+Fill in the input fields at the bottom of the table and press the **+** button.
 
+  * **MAC-Address** — Accepts `-` or `:` separators, or raw 12-character hex. Dash separators are added automatically if omitted.
+  * **IP or Hostname** — Required for host status checks and broadcast address calculation.
+  * **CIDR** — Subnet mask in CIDR notation (defaults to 24).
+  * **Port** — UDP port for the magic packet (defaults to 9).
+  * **Comment** — Optional description.
 
-* _Wake up!_ - send a magic packet for the selected host.
+### Removing a Host
+Click the trash can icon. The removed host's data is placed into the input fields so you can re-add it if needed.
 
-* _Remove_ - delete the row from the configuration. The data of the deleted row is placed in the input fields for adding a new host. If you accidently removed a host you can simply press _Add_ again to add it again.
-* _Add_ - adds a new entry to the table. Fill in the text boxes and press _Add_.
+### Saving
+Click the green **Save** button or use _Options_ > _Save Configuration_. Save/Cancel buttons only appear after changes are made.
 
-# License
-```wake-on-lan_plus.php``` is published under [MIT](LICENSE) license.
+### Host Status
+Hosts are continuously checked on ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS), and 5938 (TeamViewer). A thumbs-up/down icon indicates the result.
+
+### Options Menu
+
+| Option | Description |
+|---|---|
+| Download Configuration | Downloads `config.json` to your computer |
+| Export Configuration | Shows JSON in a modal for manual copy |
+| Import Configuration | Paste JSON to import hosts |
+| Load Configuration | Reloads configuration from the server |
+| Save Configuration | Saves current configuration to the server |
+
+### Running Tests
+
+```bash
+php tests/test_functions.php
+```
+
+---
+
+## Configuration Format
+
+Stored as `config.json` — a JSON array of host objects:
+
+```json
+[
+  {
+    "mac": "AA-BB-CC-DD-EE-FF",
+    "host": "192.168.1.100",
+    "cidr": "24",
+    "port": "9",
+    "comment": "My Computer"
+  }
+]
+```
+
+---
+
+## Internationalization
+
+Language switching is available via flag icons in the footer:
+  * English
+  * German (Deutsch)
+  * Spanish (Espanola)
+
+---
+
+## License
+Published under the [MIT License](LICENSE).

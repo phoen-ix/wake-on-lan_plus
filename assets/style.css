@@ -1,0 +1,50 @@
+body {
+    font-family: 'Varela Round', 'Segoe UI', 'Trebuchet MS', sans-serif;
+}
+
+#ajaxLoader {
+    margin-left: 10px;
+    display: none;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.dropdown-item i {
+    min-width: 1.5em;
+}
+
+.ui-sortable tr {
+    cursor: pointer;
+}
+
+#cancelButton, #saveButton {
+    display: inline-block;
+    vertical-align: middle;
+    margin-top: 20px;
+}
+
+#cancelButton {
+    margin-right: 10px;
+}
+
+#pageContainer {
+    padding: 5px;
+    margin: auto;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    font-size: 80%;
+}

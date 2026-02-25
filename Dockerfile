@@ -1,26 +1,22 @@
-FROM ubuntu:jammy-20240212 as builder
+FROM php:8.3-apache
 
-# Avoid prompts from apt
-ENV DEBIAN_FRONTEND=noninteractive
+# Install PHP sockets extension (mbstring is included in php:8.3-apache)
+RUN docker-php-ext-install sockets
 
-# Combine add-apt-repository commands and cleanup in one RUN to reduce layers and ensure cleanup is effective
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository -y ppa:ondrej/apache2 && \
-    add-apt-repository -y ppa:ondrej/php && \
-    apt-get update && \
-    apt-get install -y apache2=2.4.* php8.3=8.3.* libapache2-mod-php8.3 php8.3-mbstring php8.3-sockets && \
-    a2enmod php8.3 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm /var/www/html/index.html
+# Enable Apache mod_rewrite for .htaccess support
+RUN a2enmod rewrite
 
-# Redirect Apache logs to stdout and stderr
-RUN ln -sf /dev/stdout /var/log/apache2/access.log && \
-    ln -sf /dev/stdout /var/log/apache2/error.log
+# Enable AllowOverride for .htaccess support
+RUN sed -i '/<Directory \/var\/www\/html>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
-# Copying the application code
-COPY wake-on-lan_plus.php /var/www/html/index.php
+# Copy application files
+COPY index.php /var/www/html/index.php
+COPY includes/ /var/www/html/includes/
+COPY assets/ /var/www/html/assets/
+COPY .htaccess /var/www/html/.htaccess
+
+# Remove default index.html
+RUN rm -f /var/www/html/index.html
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
@@ -33,5 +29,4 @@ ENTRYPOINT ["/entrypoint.sh"]
 EXPOSE 80
 
 # Start Apache in the foreground
-CMD ["apachectl", "-D", "FOREGROUND"]
-
+CMD ["apache2-foreground"]

@@ -4,13 +4,18 @@ services:
   wake-on-lan_plus:
     image: phoen9/wake-on-lan_plus:${WAKE_ON_LAN_PLUS_IMAGE:-latest}
     container_name: ${CONTAINER_NAME:-wake-on-lan_plus}
+    environment:
+      - WOL_USERNAME=${WOL_USERNAME:-}
+      - WOL_PASSWORD=${WOL_PASSWORD:-}
     ports:
       - "${HOST_PORT:-3880}:${CONTAINER_PORT:-80}"
     networks:
       macvlan_network:
         ipv4_address: 192.168.1.x # Specify a free IP address from your LAN
     volumes:
-      - ./wake-on-lan_plus.php:/var/www/html/index.php:ro
+      - ./index.php:/var/www/html/index.php:ro
+      - ./includes/:/var/www/html/includes/:ro
+      - ./assets/:/var/www/html/assets/:ro
       - './volume/config/:/var/www/html/'
 
 networks:

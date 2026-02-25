@@ -1,0 +1,20 @@
+# Runtime data
+config.json
+volume/
+
+# Environment
+.env
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
