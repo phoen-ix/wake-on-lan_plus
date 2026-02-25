@@ -520,9 +520,9 @@ $(function () {
                     if ('string' == typeof resp) {
                         showNotification(resp);
                     } else {
+                        if (resp.csrfToken) csrfToken = resp.csrfToken;
                         makeClean();
                         showNotification($('#textConfigSavedSuccessfully').html(), 'success', 3000);
-
                     }
                 }
             });
@@ -738,6 +738,7 @@ $(function () {
                 if ('string' == typeof resp) {
                     showNotification(resp);
                 } else {
+                    if (resp.csrfToken) csrfToken = resp.csrfToken;
                     showNotification(resp['info'], 'success', 5000);
                 }
             }

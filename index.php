@@ -20,6 +20,12 @@ $isSocketExtensionLoaded = intval(extension_loaded("sockets"));
 $isDebugEnabled = intval(safeGet($_GET, "debug", false));
 $ajaxOperation = safeGet($_POST, "aop", safeGet($_GET, "aop", ""));
 
+// Configurable rate limits via environment variables (with defaults)
+$rateLimitConfigSet = intval(getenv('WOL_RATE_LIMIT_CONFIG_SET') ?: 10);
+$rateLimitHostCheck = intval(getenv('WOL_RATE_LIMIT_HOST_CHECK') ?: 30);
+$rateLimitHostWakeup = intval(getenv('WOL_RATE_LIMIT_HOST_WAKEUP') ?: 5);
+$rateLimitWindowSecs = intval(getenv('WOL_RATE_LIMIT_WINDOW_SECS') ?: 60);
+
 /**
  * Handle AJAX operations
  */
@@ -27,12 +33,16 @@ if ("CONFIG.GET" === $ajaxOperation) {
     $jsonData = [];
     if (file_exists($configFilename)) {
         $jsonString = file_get_contents($configFilename);
-        $jsonData = json_decode($jsonString, true);
+        try {
+            $jsonData = json_decode($jsonString, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            endWithErrorMessage("Failed to parse configuration file: " . $e->getMessage());
+        }
     }
     endWithJsonResponse($jsonData);
 } elseif ("CONFIG.SET" === $ajaxOperation && "POST" == $requestMethod) {
-    // Rate limit: 10 requests per 60 seconds
-    if (!checkRateLimit('CONFIG.SET', 10, 60)) {
+    // Rate limit config saves
+    if (!checkRateLimit('CONFIG.SET', $rateLimitConfigSet, $rateLimitWindowSecs)) {
         http_response_code(429);
         die("Too many requests. Please try again later.");
     }
@@ -62,10 +72,13 @@ if ("CONFIG.GET" === $ajaxOperation) {
     }
 
     $jsonString = json_encode($jsonData, JSON_PRETTY_PRINT);
-    if (!file_put_contents($configFilename, $jsonString, LOCK_EX)) {
+    $tmpFile = $configFilename . '.tmp.' . getmypid();
+    if (file_put_contents($tmpFile, $jsonString, LOCK_EX) === false || !rename($tmpFile, $configFilename)) {
+        @unlink($tmpFile);
         endWithErrorMessage("Cannot write configuration file. Please make sure the web server can write to the folder.");
     }
-    endWithJsonResponse(["status" => "OK"]);
+    $newToken = rotateCsrfToken();
+    endWithJsonResponse(["status" => "OK", "csrfToken" => $newToken]);
 } elseif ("CONFIG.DOWNLOAD" === $ajaxOperation) {
     $jsonData = [];
     if (file_exists($configFilename)) {
@@ -74,8 +87,8 @@ if ("CONFIG.GET" === $ajaxOperation) {
     }
     endWithJsonResponse($jsonData, "wake-on-lan-" . date("Ymd-His") . ".json");
 } elseif ("HOST.CHECK" === $ajaxOperation) {
-    // Rate limit: 30 requests per 60 seconds
-    if (!checkRateLimit('HOST.CHECK', 30, 60)) {
+    // Rate limit host checks
+    if (!checkRateLimit('HOST.CHECK', $rateLimitHostCheck, $rateLimitWindowSecs)) {
         http_response_code(429);
         die("Too many requests. Please try again later.");
     }
@@ -85,8 +98,8 @@ if ("CONFIG.GET" === $ajaxOperation) {
     if (!$host) {
         endWithErrorMessage("Parameter host not set.");
     }
-    // Validate host to prevent SSRF
-    if (preg_match('/[\s\/\\\\]/', $host) || strpos($host, '://') !== false) {
+    // Validate host to prevent SSRF: only allow alphanumeric, dots, hyphens, colons (IPv6)
+    if (!preg_match('/^[a-zA-Z0-9.\-:]+$/', $host) || strlen($host) > 253) {
         endWithErrorMessage("Invalid host parameter.");
     }
     $responseData = ["error" => false, "isUp" => false];
@@ -116,8 +129,8 @@ if ("CONFIG.GET" === $ajaxOperation) {
 
     endWithJsonResponse($responseData);
 } elseif ("HOST.WAKEUP" === $ajaxOperation && "POST" == $requestMethod) {
-    // Rate limit: 5 requests per 60 seconds
-    if (!checkRateLimit('HOST.WAKEUP', 5, 60)) {
+    // Rate limit wake-up requests
+    if (!checkRateLimit('HOST.WAKEUP', $rateLimitHostWakeup, $rateLimitWindowSecs)) {
         http_response_code(429);
         die("Too many requests. Please try again later.");
     }
@@ -142,10 +155,11 @@ if ("CONFIG.GET" === $ajaxOperation) {
         $responseData["DEBUG"] = $debugOut;
     }
 
+    $newToken = rotateCsrfToken();
     if ($MESSAGE) {
         endWithErrorMessage($MESSAGE);
     } else {
-        endWithJsonResponse(["info" => "Magic packet has been sent for <strong>" . htmlspecialchars($mac, ENT_QUOTES, 'UTF-8') . "</strong>. Please wait for the host to come up...",]);
+        endWithJsonResponse(["info" => "Magic packet has been sent for <strong>" . htmlspecialchars($mac, ENT_QUOTES, 'UTF-8') . "</strong>. Please wait for the host to come up...", "csrfToken" => $newToken]);
     }
 } else {
     if (isset($_GET["aop"])) {
@@ -158,6 +172,7 @@ header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: DENY");
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self'");
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -220,6 +235,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 
     <div id="notificationContainer"></div>
 
+    <div class="table-responsive">
     <table id="hostTable" class="table table-sm table-hover">
         <colgroup>
             <col style="min-width: 2em;">
@@ -284,6 +300,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
         </tr>
         </tfoot>
     </table>
+    </div>
 
 
     <footer class="d-flex flex-wrap justify-content-between">

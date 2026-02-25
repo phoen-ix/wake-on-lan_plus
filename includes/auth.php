@@ -32,6 +32,18 @@ function validateCsrfToken($token)
 }
 
 /**
+ * Rotate the CSRF token by clearing and regenerating it.
+ * Should be called after successful state-changing operations.
+ *
+ * @return string The new CSRF token
+ */
+function rotateCsrfToken()
+{
+    unset($_SESSION['csrf_token']);
+    return generateCsrfToken();
+}
+
+/**
  * Basic Authentication via environment variables.
  * Set WOL_USERNAME and WOL_PASSWORD to enable.
  */

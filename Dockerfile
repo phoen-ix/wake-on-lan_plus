@@ -1,6 +1,7 @@
 FROM php:8.3-apache
 
-# Install PHP sockets extension (mbstring is included in php:8.3-apache)
+# Install curl for healthcheck and PHP sockets extension
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install sockets
 
 # Enable Apache mod_rewrite for .htaccess support
@@ -24,6 +25,10 @@ RUN chmod +x /entrypoint.sh
 
 # Use the entrypoint script
 ENTRYPOINT ["/entrypoint.sh"]
+
+# Healthcheck: verify Apache is responding
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
 
 # Expose Apache
 EXPOSE 80

@@ -92,6 +92,18 @@ assert_false(validateCsrfToken('invalid_token'), 'Rejects invalid token');
 assert_false(validateCsrfToken(''), 'Rejects empty string');
 
 // ============================================================
+echo "\n=== rotateCsrfToken() ===\n";
+// ============================================================
+
+$oldToken = $_SESSION['csrf_token'];
+$newToken = rotateCsrfToken();
+assert_not_empty($newToken, 'rotateCsrfToken returns a non-empty token');
+assert_true($oldToken !== $newToken, 'rotateCsrfToken generates a different token');
+assert_equals(64, strlen($newToken), 'New token is 64 hex chars (32 bytes)');
+assert_true(validateCsrfToken($newToken), 'New token validates correctly');
+assert_false(validateCsrfToken($oldToken), 'Old token no longer validates after rotation');
+
+// ============================================================
 echo "\n=== checkRateLimit() ===\n";
 // ============================================================
 

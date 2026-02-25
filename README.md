@@ -18,20 +18,29 @@ This version is a security-hardened, modular rewrite based on the 2024 release. 
 
 ### Security
   * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via `X-CSRF-TOKEN` header
-  * **Session-based rate limiting** per action (CONFIG.SET: 10/60s, HOST.CHECK: 30/60s, HOST.WAKEUP: 5/60s)
+  * **CSRF token rotation** — tokens are regenerated after every successful state-changing operation; the new token is returned in the JSON response and picked up by the JavaScript client automatically
+  * **Content-Security-Policy header** — restricts script/style/font/image sources to `self` and trusted CDN origins
+  * **Session-based rate limiting** per action, configurable via environment variables (see below)
   * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD` environment variables
-  * **SSRF prevention** — input validation on the HOST.CHECK `host` parameter
-  * **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`
+  * **SSRF prevention** — strict allowlist validation on the HOST.CHECK `host` parameter (alphanumeric, dots, hyphens, colons only; max 253 chars)
+  * **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Content-Security-Policy`
   * **`.htaccess` protections** — blocks direct web access to `config.json` and the old monolith file
   * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials
   * **JSON structure validation** on configuration saves
-  * **File locking** (`LOCK_EX`) on config file writes
+  * **Atomic config file writes** — writes to a temp file and uses `rename()` for crash-safe saves
+  * **Anchored MAC address validation** — regex properly anchored with `^`/`$` to prevent partial matches
   * HOST.WAKEUP changed from GET to POST
 
 ### Docker
   * Switched from Ubuntu + PPAs to the official `php:8.3-apache` base image (smaller, simpler)
   * `.htaccess` / `mod_rewrite` support enabled in the container
   * Authentication environment variables passed through `docker-compose.yml`
+  * **HEALTHCHECK** instruction — verifies Apache responsiveness every 30 seconds
+  * **Config backup** — the entrypoint automatically backs up `config.json` on container start (keeps the last 5 backups)
+
+### UX
+  * **Dark mode** — automatic via `prefers-color-scheme: dark` media query with Bootstrap-compatible overrides
+  * **Responsive table** — host table wrapped in Bootstrap's `table-responsive` for mobile support
 
 ### From the 2024 Release
   * PHP 8.3 compatibility
@@ -75,6 +84,17 @@ WOL_PASSWORD=your_secure_password
 
 Leave both empty to disable authentication.
 
+### Optional: Configure Rate Limits
+
+Rate limits are configurable via environment variables:
+
+```env
+WOL_RATE_LIMIT_CONFIG_SET=10       # Max config saves per window (default: 10)
+WOL_RATE_LIMIT_HOST_CHECK=30       # Max host checks per window (default: 30)
+WOL_RATE_LIMIT_HOST_WAKEUP=5       # Max wake-up requests per window (default: 5)
+WOL_RATE_LIMIT_WINDOW_SECS=60      # Rate limit window in seconds (default: 60)
+```
+
 ---
 
 ## Requirements (Bare Metal)
@@ -105,19 +125,21 @@ Leave both empty to disable authentication.
 ```
 index.php                  Main entry point (AJAX routing + HTML UI)
 includes/
-  auth.php                 Authentication & CSRF token management
+  auth.php                 Authentication, CSRF tokens & token rotation
   functions.php            Core WoL functions & utilities
   .htaccess                Blocks direct web access to includes/
 assets/
   app.js                   Client-side JavaScript application
-  style.css                CSS styles
+  style.css                CSS styles (includes dark mode)
 tests/
   test_functions.php       Unit tests (run: php tests/test_functions.php)
-Dockerfile                 Docker image definition
+Dockerfile                 Docker image definition (with HEALTHCHECK)
 docker-compose.yml         Docker Compose orchestration
-entrypoint.sh              Docker entrypoint script
+entrypoint.sh              Docker entrypoint script (with config backup)
 example.env                Environment variable template
 .htaccess                  Protects config.json and legacy files
+IMPROVEMENTS.md            Future improvements roadmap
+HANDOVER.md                Developer handover document
 ```
 
 ---

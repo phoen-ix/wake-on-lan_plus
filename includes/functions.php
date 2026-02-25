@@ -37,7 +37,7 @@ function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut)
         $mac = str_replace(":", "-", strtoupper($mac));
         $debugOut[] = __LINE__ . " : MAC = " . $mac;
 
-        if (!preg_match("/([A-F0-9]{2}-){5}([0-9A-F]){2}/", $mac) || strlen($mac) != 17) {
+        if (!preg_match("/^([A-F0-9]{2}-){5}[A-F0-9]{2}$/", $mac) || strlen($mac) != 17) {
             $wolResult = "Error: Invalid MAC-address: " . $mac;
             $debugOut[] = __LINE__ . " : " . $wolResult;
         }
