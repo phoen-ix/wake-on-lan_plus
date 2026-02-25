@@ -1,8 +1,6 @@
 # wake-on-lan_plus
 Forked from [AndiSHFR/wake-on-lan.php](https://github.com/andishfr/wake-on-lan.php), maintained by [phoen-ix](https://github.com/phoen-ix/wake-on-lan_plus).
 
-![Wake-On_Lan Screenshot](wake-on-lan_plus.png "wake-on-lan screenshot")
-
 ## What's New (Refactored Edition)
 
 This version is a security-hardened, modular rewrite based on the 2024 release. Key changes:
@@ -12,8 +10,8 @@ This version is a security-hardened, modular rewrite based on the 2024 release. 
     - `index.php` — Entry point, AJAX routing, and HTML
     - `includes/auth.php` — Authentication and CSRF token management
     - `includes/functions.php` — Core WoL functions and utilities
-    - `assets/app.js` — All client-side JavaScript
-    - `assets/style.css` — All CSS styles
+    - `assets/app.js` — All client-side JavaScript (mini-i18n, settings manager, card rendering, toast notifications)
+    - `assets/style.css` — All CSS styles (CSS custom properties, dark/light themes)
   * Unit test suite added (`tests/test_functions.php`)
 
 ### Security
@@ -38,8 +36,16 @@ This version is a security-hardened, modular rewrite based on the 2024 release. 
   * **Config backup** — the entrypoint automatically backs up `config.json` on container start (keeps the last 5 backups)
 
 ### UX
-  * **Dark mode** — automatic via `prefers-color-scheme: dark` media query with Bootstrap-compatible overrides
-  * **Responsive table** — host table wrapped in Bootstrap's `table-responsive` for mobile support
+  * **Redesigned card-based UI** — hosts displayed as individual cards in a responsive grid, replacing the old table layout
+  * **Theme switcher** — Dark (default), Light, and Auto modes via a settings panel; themes powered by CSS custom properties
+  * **Settings panel** — slide-out sidebar with configurable options persisted to localStorage (theme, compact view, check interval, auto-refresh, default port/CIDR, toast duration, language)
+  * **Toast notifications** — slide-in toasts with colored accents replace the old alert bars
+  * **Floating action button** — opens a modal form to add new hosts
+  * **Floating save bar** — appears at the bottom of the screen when unsaved changes exist
+  * **Live status counter** — header shows "X online / Y total" updated in real-time
+  * **Animated status indicators** — pulsing green dot for online hosts, red for offline, amber for checking
+  * **Compact view** — toggle in settings switches from card grid to single-column list
+  * **Drag-and-drop reordering** — cards can be reordered via jQuery UI sortable
 
 ### From the 2024 Release
   * PHP 8.3 compatibility
@@ -146,22 +152,44 @@ HANDOVER.md                Developer handover document
 ## Usage
 
 ### Adding a Host
-Fill in the input fields at the bottom of the table and press the **+** button.
+Click the **+** floating action button (bottom-right corner) to open the Add Host modal.
 
-  * **MAC-Address** — Accepts `-` or `:` separators, or raw 12-character hex. Dash separators are added automatically if omitted.
+  * **MAC Address** — Accepts `-` or `:` separators, or raw 12-character hex. Dash separators are added automatically if omitted.
   * **IP or Hostname** — Required for host status checks and broadcast address calculation.
-  * **CIDR** — Subnet mask in CIDR notation (defaults to 24).
-  * **Port** — UDP port for the magic packet (defaults to 9).
-  * **Comment** — Optional description.
+  * **CIDR** — Subnet mask in CIDR notation (defaults to the value set in Settings, initially 24).
+  * **Port** — UDP port for the magic packet (defaults to the value set in Settings, initially 9).
+  * **Comment** — Optional description, displayed as the card title.
+
+### Waking a Host
+Click the power icon button on any host card to send a magic packet.
 
 ### Removing a Host
-Click the trash can icon. The removed host's data is placed into the input fields so you can re-add it if needed.
+Click the trash icon on a host card. The removed host's data is placed into the Add Host form fields so you can re-add it if needed.
 
 ### Saving
-Click the green **Save** button or use _Options_ > _Save Configuration_. Save/Cancel buttons only appear after changes are made.
+Click the green **Save** button in the floating save bar (appears at the bottom when changes exist) or use _Options_ > _Save Configuration_.
 
 ### Host Status
-Hosts are continuously checked on ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS), and 5938 (TeamViewer). A thumbs-up/down icon indicates the result.
+Hosts are continuously checked on ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS), and 5938 (TeamViewer). Each card shows a status indicator:
+  * **Green pulsing dot** — host is online (detected port shown on card)
+  * **Red dot** — host is offline
+  * **Amber dot** — check in progress
+
+The check interval is configurable in Settings (1s, 2s, 5s, 10s, 30s, or disabled).
+
+### Settings Panel
+Click the gear icon in the header to open the settings sidebar. All settings are saved to `localStorage` and persist across sessions:
+
+| Setting | Description | Default |
+|---|---|---|
+| Theme | Dark, Light, or Auto (follows system preference) | Dark |
+| Compact view | Switches from card grid to single-column list | Off |
+| Check interval | How often to poll host status | 2s |
+| Auto-refresh | Load configuration from server on page open | On |
+| Default port | Pre-filled port for new hosts | 9 |
+| Default CIDR | Pre-filled CIDR for new hosts | 24 |
+| Toast duration | How long notifications stay visible | 5s |
+| Language | Display language (English, Deutsch, Espanol) | English |
 
 ### Options Menu
 
@@ -201,10 +229,12 @@ Stored as `config.json` — a JSON array of host objects:
 
 ## Internationalization
 
-Language switching is available via flag icons in the footer:
+Language switching is available via the Settings panel or flag icons in the footer:
   * English
   * German (Deutsch)
   * Spanish (Espanola)
+
+The selected language is persisted in localStorage.
 
 ---
 

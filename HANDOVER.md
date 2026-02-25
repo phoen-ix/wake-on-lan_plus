@@ -14,11 +14,11 @@ The **original** project was a single monolithic PHP file (`wake-on-lan_plus.php
 
 | Original | Refactored |
 |---|---|
-| `wake-on-lan_plus.php` (1622 lines, everything inline) | `index.php` (~477 lines) — entry point, AJAX routing, HTML |
+| `wake-on-lan_plus.php` (1622 lines, everything inline) | `index.php` (~330 lines) — entry point, AJAX routing, HTML |
 | | `includes/auth.php` (~68 lines) — authentication, CSRF tokens, token rotation |
 | | `includes/functions.php` (232 lines) — core WoL functions, helpers |
-| | `assets/app.js` (~907 lines) — all client-side JavaScript |
-| | `assets/style.css` (~120 lines) — all CSS (includes dark mode) |
+| | `assets/app.js` (~680 lines) — mini-i18n, bootstrapChoice, WolSettings manager, card rendering, toast notifications, main app |
+| | `assets/style.css` (~720 lines) — CSS custom properties, dark/light themes, card grid, settings panel, toast system |
 | No tests | `tests/test_functions.php` (~172 lines) — unit tests |
 
 The original monolith file is retained in the repo but blocked from web access via `.htaccess`.
@@ -62,8 +62,16 @@ These features did **not** exist in the original:
 | PHP-to-JS bridge | Configuration passed via `window.WOL_CONFIG` JSON object instead of inline PHP variables |
 | CSRF in AJAX | All state-changing AJAX calls include `X-CSRF-TOKEN` header; JS updates the local token from response after each operation |
 | Accessibility | Added `<label>` elements with `visually-hidden` class for form inputs |
-| Responsive table | Host table wrapped in Bootstrap `table-responsive` div for mobile support |
-| Dark mode | Automatic via `@media (prefers-color-scheme: dark)` with Bootstrap-compatible overrides for backgrounds, text, forms, modals, and dropdowns |
+| Card-based layout | Hosts displayed as cards in a responsive CSS grid, replacing the old Bootstrap table |
+| Theme system | Dark (default), Light, and Auto themes via CSS custom properties on `[data-theme]`; user-selectable in Settings |
+| Settings panel | Slide-out sidebar with configurable options (theme, compact view, check interval, auto-refresh, defaults, toast duration, language) persisted to `localStorage` via `WolSettings` manager |
+| Toast notifications | Slide-in toast system replaces Bootstrap alert bars; configurable duration |
+| Add Host modal | Floating action button opens a modal form with 2-column grid layout; CIDR and port pre-filled from settings defaults |
+| Floating save bar | Appears at bottom of screen when unsaved changes exist, replacing inline save/cancel buttons |
+| Live status counter | Header displays "X online / Y total" updated after each host check |
+| Animated status | Pulsing green dot for online, red for offline, amber for checking; CSS keyframe animations |
+| Compact view | Toggle in settings switches from card grid to single-column list layout |
+| Fonts | Switched from Varela Round to Outfit (display) + JetBrains Mono (data/code) via Google Fonts |
 
 ---
 
@@ -78,7 +86,7 @@ These features did **not** exist in the original:
   - HOST.CHECK: Strict allowlist SSRF validation
   - HOST.WAKEUP: CSRF rotation, new token in response
 - **Lines 170-174**: Security headers for HTML responses
-- **Lines 175-476**: Full HTML page — Bootstrap 5.3.3 layout, responsive table, modals, JS includes
+- **Lines 175+**: Full HTML page — header with stats counter, card grid container, floating add button, save bar, toast container, settings slide-out panel, Bootstrap modals (load config, import, export, add host), script templates, CDN includes
 
 ### `includes/auth.php`
 - **Lines 6-8**: Session initialization
@@ -98,7 +106,16 @@ These features did **not** exist in the original:
 ### `assets/app.js`
 - **Lines 1-265**: mini-i18n.js library (language switching)
 - **Lines 271-333**: Bootstrap Choice jQuery plugin (modal dialog)
-- **Lines 340-905**: Main application — config management, host status polling, template rendering, input validation, drag-and-drop, i18n data
+- **Lines 338-390**: `WolSettings` manager — localStorage-backed settings with defaults for theme, compact view, check interval, auto-refresh, default port/CIDR, toast duration, and language
+- **Lines 395+**: Main application:
+  - Toast notification system (`showToast`) replacing old alert-based `showNotification`
+  - Card rendering (`renderCard`) and grid sync (`syncCardsFromTable`)
+  - Live stats counter (`updateStats`) and empty state management
+  - Host add/remove/wake with card animations
+  - Settings panel open/close and two-way binding to `WolSettings`
+  - Theme application (`applyTheme`) and compact view toggle (`applyCompact`)
+  - Drag-and-drop card reordering via jQuery UI sortable (syncs back to hidden table)
+  - Startup: loads saved settings, applies theme/compact/language, starts host status polling
 
 ### `tests/test_functions.php`
 - Tests `safeGet()`, `generateCsrfToken()`, `validateCsrfToken()`, `rotateCsrfToken()`, `checkRateLimit()`, and `wakeOnLan()` validation
@@ -173,7 +190,10 @@ Rate limits are configurable via environment variables (see above). Defaults:
 - jQuery 3.6.0
 - jQuery UI 1.12.1
 - Font Awesome 5.15.4
-- Google Fonts (Varela Round)
+- Google Fonts (Outfit, JetBrains Mono)
+
+### Client-side (localStorage)
+- `wol_settings` — JSON object storing user preferences (theme, compact, checkInterval, autoRefresh, defaultPort, defaultCidr, toastDuration, language)
 
 ---
 
@@ -185,9 +205,10 @@ Rate limits are configurable via environment variables (see above). Defaults:
 4. **macvlan networking** — Docker deployment requires macvlan network creation, which needs host network privileges and a dedicated IP.
 5. **Legacy file** — The original `wake-on-lan_plus.php` monolith is kept in the repo for reference but blocked from web access. It can be safely deleted.
 6. **Config backups** — The entrypoint creates timestamped backups in `config_backups/` on container start (last 5 kept). These are inside the container; map a volume to persist them.
-7. **Dark mode** — Follows system preference via `prefers-color-scheme`. No manual toggle yet.
+7. **Theme system** — Dark/Light/Auto modes selectable in the Settings panel. Auto follows `prefers-color-scheme`. The selected theme is persisted in localStorage.
 8. **No CSP header** — Content-Security-Policy was removed because the app's inline PHP-to-JS bridge (`window.WOL_CONFIG`) and the template engine's use of `new Function()` require `unsafe-inline` and `unsafe-eval`, which negate CSP's value.
 9. **Future improvements** — See `IMPROVEMENTS.md` for a comprehensive roadmap of planned improvements across 7 categories.
+10. **localStorage dependency** — Settings panel stores user preferences in `localStorage` under the key `wol_settings`. If localStorage is unavailable (e.g., private browsing in some browsers), settings fall back to defaults each page load.
 
 ---
 

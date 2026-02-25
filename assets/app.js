@@ -333,22 +333,73 @@ $(function () {
 });
 
 
-/**
- * Main Wake-on-LAN application
- * Reads configuration from window.WOL_CONFIG set by PHP
- */
+/* ============================================================
+   Settings Manager — localStorage persistence
+   ============================================================ */
+var WolSettings = (function () {
+    var STORAGE_KEY = 'wol_settings';
+
+    var defaults = {
+        theme: 'dark',
+        compact: false,
+        checkInterval: 2000,
+        autoRefresh: true,
+        defaultPort: 9,
+        defaultCidr: 24,
+        toastDuration: 5000,
+        language: 'en-US'
+    };
+
+    function load() {
+        try {
+            var stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+            return $.extend({}, defaults, stored || {});
+        } catch (e) {
+            return $.extend({}, defaults);
+        }
+    }
+
+    function save(settings) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        } catch (e) {
+            // localStorage unavailable
+        }
+    }
+
+    function get(key) {
+        var s = load();
+        return s.hasOwnProperty(key) ? s[key] : defaults[key];
+    }
+
+    function set(key, value) {
+        var s = load();
+        s[key] = value;
+        save(s);
+    }
+
+    return {
+        load: load,
+        save: save,
+        get: get,
+        set: set,
+        defaults: defaults
+    };
+})();
+
+
+/* ============================================================
+   Main Wake-on-LAN Application
+   ============================================================ */
 $(function () {
     'use strict'
     var
         isSocketExtensionLoaded = window.WOL_CONFIG.isSocketExtensionLoaded
-
         , isDebugEnabled = window.WOL_CONFIG.isDebugEnabled
-
         , csrfToken = window.WOL_CONFIG.csrfToken
-
         , baseAddress = window.WOL_CONFIG.baseAddress
 
-        , debugPrint = function (/* args */) {
+        , debugPrint = function () {
             if (console && isDebugEnabled) {
                 var args = [].slice.call(arguments);
                 args.unshift('*** WOL: ');
@@ -356,67 +407,49 @@ $(function () {
             }
         }
 
-        , getAllQueryParameters = function (url) {
-            url = url || location.search;
-            var
-                isArray = function (o) {
-                    return ('[object Array]' === Object.prototype.toString.call(o));
-                },
-                params = {}
-            ;
+        /* ---- Toast Notification System ---- */
+        , showToast = function (message, style, autoClose) {
+            var $container = $('#toastContainer');
+            style = style || 'danger';
 
-            if (url) url.substr(1).split("&").forEach(function (item) {
-                var
-                    s = item.split("="),
-                    k = decodeURIComponent(s[0]),
-                    v = s[1] && decodeURIComponent((s[1] + '').replace(/\+/g, '%20'))
-                ;
-                if (!params.hasOwnProperty(k)) {
-                    params[k] = v;
-                } else {
-                    if (!isArray(params[k])) params[k] = [params[k]];
-                    params[k].push(v);
-                }
-            })
-            return params;
-        }
-
-        , showNotification = function (message, style, autoClose) {
-            var $notificationContainer = $('#notificationContainer');
-
-            if (!message || '' === message) {
-                $notificationContainer.empty();
-                return;
+            var duration = autoClose;
+            if (typeof duration === 'undefined') {
+                duration = WolSettings.get('toastDuration');
             }
 
-            style = style || 'danger';
-            autoClose = +autoClose || 0;
+            var iconMap = {
+                success: 'fa-check-circle',
+                danger: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
 
-            var
-                $notification = $([
-                    '<div class="alert alert-'
-                    , style
-                    , ' alert-dismissible fade show" role="alert" >'
-                    , message
-                    , '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" ></button>'
-                    , '</div>'
-                ].join('')).hide()
+            var $toast = $([
+                '<div class="wol-toast toast-' + style + '">',
+                '  <i class="fas ' + (iconMap[style] || iconMap.info) + ' wol-toast__icon"></i>',
+                '  <div class="wol-toast__body">' + message + '</div>',
+                '  <button class="wol-toast__close"><i class="fas fa-times"></i></button>',
+                '</div>'
+            ].join(''));
 
-                , hideNotification = function () {
-                    $notification.slideUp(400, function () {
-                        $notification.remove()
-                    });
-                }
-            ;
+            $container.append($toast);
 
-            $notificationContainer.prepend($notification);
-            $notification
-                .fadeIn()
-                .find('.close-alert')
-                .on('click', hideNotification)
-            ;
+            var removeToast = function () {
+                $toast.addClass('is-leaving');
+                setTimeout(function () { $toast.remove(); }, 260);
+            };
 
-            if (0 < autoClose) setTimeout(hideNotification, autoClose);
+            $toast.find('.wol-toast__close').on('click', removeToast);
+
+            if (duration > 0) {
+                setTimeout(removeToast, duration);
+            }
+        }
+
+        /* Keep legacy showNotification wired to toast */
+        , showNotification = function (message, style, autoClose) {
+            if (!message || '' === message) return;
+            showToast(message, style, autoClose || WolSettings.get('toastDuration'));
         }
 
         , renderTemplate = function (html, data, rowCallback) {
@@ -465,8 +498,8 @@ $(function () {
             return result;
         }
 
-
         , unsavedChangesCount = 0
+        , cardIndex = 0
 
         , makeClean = function () {
             unsavedChangesCount = 0;
@@ -478,25 +511,98 @@ $(function () {
             updateUi();
         }
 
+        /* Get configuration from the hidden table (source of truth) */
         , getConfiguration = function () {
             return $('#hostTable tbody tr').map(function () {
                 return $(this).data('wol');
             }).get();
         }
 
-        , addHost = function (mac, host, cidr, port, comment) {
-            var
-                hostConfig = {
-                    mac: mac
-                    , host: host
-                    , cidr: cidr
-                    , port: port
-                    , comment: comment
+        /* ---- Card Rendering ---- */
+        , escHtml = function (str) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str || ''));
+            return div.innerHTML;
+        }
+
+        , renderCard = function (mac, host, cidr, port, comment, index) {
+            var dataWol = JSON.stringify({ mac: mac, host: host, cidr: cidr, port: port, comment: comment });
+            var displayName = comment || host || mac;
+            var displayHost = host || '';
+
+            return [
+                '<div class="wol-card is-checking" data-card-index="' + index + '" data-wol-card=\'' + escHtml(dataWol) + '\' style="animation-delay:' + (index * 0.05) + 's">',
+                '  <div class="wol-card__top">',
+                '    <div class="wol-card__status" title="Checking..."></div>',
+                '    <div class="wol-card__info">',
+                '      <div class="wol-card__name">' + escHtml(displayName) + '</div>',
+                '      <div class="wol-card__host">' + escHtml(displayHost) + '</div>',
+                '      <div class="wol-card__port-info"></div>',
+                '    </div>',
+                '    <div class="wol-card__actions">',
+                '      <button class="wol-card-btn btn-wake btnWakeUpHost" title="Wake"><i class="fas fa-power-off"></i></button>',
+                '      <button class="wol-card-btn btn-delete btnRemoveHost" title="Delete"><i class="fas fa-trash-alt"></i></button>',
+                '    </div>',
+                '  </div>',
+                '  <div class="wol-card__meta">',
+                '    <span class="wol-card__tag"><span class="wol-card__tag-label">MAC</span> ' + escHtml(mac) + '</span>',
+                '    <span class="wol-card__tag"><span class="wol-card__tag-label">CIDR</span> /' + escHtml(String(cidr)) + '</span>',
+                '    <span class="wol-card__tag"><span class="wol-card__tag-label">Port</span> ' + escHtml(String(port)) + '</span>',
+                '  </div>',
+                '</div>'
+            ].join('\n');
+        }
+
+        , syncCardsFromTable = function () {
+            var $grid = $('#hostGrid');
+            $grid.empty();
+            cardIndex = 0;
+            $('#hostTable tbody tr').each(function () {
+                var wol = $(this).data('wol');
+                if (wol) {
+                    $grid.append(renderCard(wol.mac, wol.host, wol.cidr, wol.port, wol.comment, cardIndex));
+                    cardIndex++;
                 }
-            ;
+            });
+            updateStats();
+            updateEmptyState();
+        }
+
+        , updateStats = function () {
+            var total = $('#hostGrid .wol-card').length;
+            var online = $('#hostGrid .wol-card.is-online').length;
+            $('#statTotal').text(total);
+            $('#statOnline').text(online);
+        }
+
+        , updateEmptyState = function () {
+            var total = $('#hostGrid .wol-card').length;
+            if (total === 0) {
+                $('#emptyState').show();
+                $('#hostGrid').hide();
+            } else {
+                $('#emptyState').hide();
+                $('#hostGrid').show();
+            }
+        }
+
+        , addHost = function (mac, host, cidr, port, comment) {
+            var hostConfig = {
+                mac: mac,
+                host: host,
+                cidr: cidr,
+                port: port,
+                comment: comment
+            };
             hostConfig['dataWol'] = JSON.stringify(hostConfig);
             var tr = renderTemplate($('#tableRowTemplate').html(), hostConfig);
             $('#hostTable tbody').append(tr);
+
+            // Add card to grid
+            $('#hostGrid').append(renderCard(mac, host, cidr, port, comment, cardIndex));
+            cardIndex++;
+            updateStats();
+            updateEmptyState();
         }
 
         , saveConfigToServer = function () {
@@ -507,22 +613,22 @@ $(function () {
                 , contentType: 'application/json; charset=utf-8'
                 , dataType: 'json'
                 , headers: {'X-CSRF-TOKEN': csrfToken}
-                , beforeSend: function (/* xhr */) {
+                , beforeSend: function () {
                     $('#ajaxLoader').fadeIn();
                 }
                 , complete: function () {
                     $('#ajaxLoader').fadeOut();
                 }
                 , error: function (jqXHR) {
-                    showNotification('<small>Error ' + jqXHR.status + ' calling "' + baseAddress + '": ' + jqXHR.statusText + '<hr>' + jqXHR.responseText + '</small>', 'danger', 10000);
+                    showToast('Error ' + jqXHR.status + ': ' + jqXHR.statusText, 'danger');
                 }
                 , success: function (resp) {
                     if ('string' == typeof resp) {
-                        showNotification(resp);
+                        showToast(resp, 'danger');
                     } else {
                         if (resp.csrfToken) csrfToken = resp.csrfToken;
                         makeClean();
-                        showNotification($('#textConfigSavedSuccessfully').html(), 'success', 3000);
+                        showToast($('#textConfigSavedSuccessfully').html(), 'success');
                     }
                 }
             });
@@ -538,18 +644,18 @@ $(function () {
                 url: baseAddress
                 , type: 'GET'
                 , data: {debug: isDebugEnabled, aop: 'CONFIG.GET'}
-                , beforeSend: function (/* xhr */) {
+                , beforeSend: function () {
                     $('#ajaxLoader').fadeIn();
                 }
                 , complete: function () {
                     $('#ajaxLoader').fadeOut();
                 }
                 , error: function (jqXHR) {
-                    showNotification('<small>Error ' + jqXHR.status + ' calling "' + baseAddress + '": ' + jqXHR.statusText + '<hr>' + jqXHR.responseText + '</small>', 'danger', 10000);
+                    showToast('Error ' + jqXHR.status + ': ' + jqXHR.statusText, 'danger');
                 }
                 , success: function (resp) {
                     if ('string' == typeof resp) {
-                        showNotification(resp);
+                        showToast(resp, 'danger');
                     } else {
                         for (var i = 0; i < resp.length; i++) {
                             addHost(resp[i].mac, resp[i].host, resp[i].cidr, resp[i].port, resp[i].comment);
@@ -563,9 +669,9 @@ $(function () {
         , uiEventsBound = false
 
         , updateUi = function () {
+            var $saveBar = $('#saveBar');
             if (unsavedChangesCount) {
-                saveButton.style.display = 'block';
-                cancelButton.style.display = 'block';
+                $saveBar.addClass('is-visible');
                 if (!uiEventsBound) {
                     document.getElementById('saveButton').addEventListener('click', saveConfigToServer);
                     document.getElementById('cancelButton').addEventListener('click', function () {
@@ -576,81 +682,101 @@ $(function () {
                 }
                 document.getElementById('saveConfigToServer').closest('li').style.display = 'list-item';
             } else {
-                saveButton.style.display = 'none';
-                cancelButton.style.display = 'none';
+                $saveBar.removeClass('is-visible');
                 document.getElementById('saveConfigToServer').closest('li').style.display = 'none';
             }
         }
 
+        , checkIntervalTimer = null
         , lastUpdateIndex = 0
+
         , checkNextHostState = function () {
+            var interval = WolSettings.get('checkInterval');
+            if (interval === 0) return; // disabled
 
-            var
-                $tr = $('#hostTable tbody tr:nth-child(' + (++lastUpdateIndex) + ')')
-                , $i = $tr.find('td:first-child >') // i element of the first TR child
-                , wolInfo = $tr.data('wol') || {}
-            ;
-
-            if (0 === $tr.length) {
-                lastUpdateIndex = 0;
-                setTimeout(checkNextHostState, 10);
-            } else {
-                $.ajax({
-                    url: baseAddress
-                    , type: 'GET'
-                    , data: {debug: isDebugEnabled, aop: 'HOST.CHECK', host: wolInfo.host}
-                    , beforeSend: function (/* xhr */) {
-                        $i
-                            .removeClass('fa-question fa-eye fa-thumbs-up fa-thumbs-down text-danger text-success')
-                            .addClass('fa-eye text-muted')
-                        ;
-                    }
-                    , complete: function () {
-                        setTimeout(checkNextHostState, 2000);
-                    }
-                    , error: function (jqXHR) {
-                        showNotification('<small>Error ' + jqXHR.status + ' calling "' + baseAddress + '": ' + jqXHR.statusText + '<hr>' + jqXHR.responseText + '</small>', 'danger', 10000);
-                    }
-                    , success: function (resp) {
-                        if ('string' === typeof resp) {
-                            resp = {error: resp};
-                        }
-                        if (resp && resp.error && resp.error !== '') {
-                            return showNotification(resp.error, 'danger', 7000);
-                        } else {
-                            $i.attr('title', resp.info);
-                            if (resp.isUp) {
-                                $i
-                                    .removeClass('fa-eye text-muted')
-                                    .addClass('fa-thumbs-up text-success')
-                                ;
-                            } else {
-                                $i
-                                    .removeClass('fa-eye text-muted')
-                                    .addClass('fa-thumbs-down text-danger')
-                                ;
-                            }
-                        }
-                    }
-                });
+            var $cards = $('#hostGrid .wol-card');
+            lastUpdateIndex++;
+            if (lastUpdateIndex > $cards.length) {
+                lastUpdateIndex = 1;
             }
+
+            var $card = $cards.eq(lastUpdateIndex - 1);
+            if (!$card.length) {
+                lastUpdateIndex = 0;
+                checkIntervalTimer = setTimeout(checkNextHostState, 100);
+                return;
+            }
+
+            var wolInfo;
+            try {
+                wolInfo = JSON.parse($card.attr('data-wol-card'));
+            } catch (e) {
+                checkIntervalTimer = setTimeout(checkNextHostState, interval);
+                return;
+            }
+
+            // Also update the corresponding table row status icon
+            var $tr = $('#hostTable tbody tr:nth-child(' + lastUpdateIndex + ')');
+            var $i = $tr.find('td:first-child >');
+
+            $card.removeClass('is-online is-offline').addClass('is-checking');
+
+            $.ajax({
+                url: baseAddress
+                , type: 'GET'
+                , data: {debug: isDebugEnabled, aop: 'HOST.CHECK', host: wolInfo.host}
+                , beforeSend: function () {
+                    $i.removeClass('fa-question fa-eye fa-thumbs-up fa-thumbs-down text-danger text-success')
+                      .addClass('fa-eye text-muted');
+                }
+                , complete: function () {
+                    checkIntervalTimer = setTimeout(checkNextHostState, interval);
+                }
+                , error: function (jqXHR) {
+                    $card.removeClass('is-checking is-online').addClass('is-offline');
+                }
+                , success: function (resp) {
+                    if ('string' === typeof resp) {
+                        resp = {error: resp};
+                    }
+                    if (resp && resp.error && resp.error !== '') {
+                        $card.removeClass('is-checking is-online').addClass('is-offline');
+                        return;
+                    }
+                    $i.attr('title', resp.info);
+                    if (resp.isUp) {
+                        $card.removeClass('is-checking is-offline').addClass('is-online');
+                        $card.find('.wol-card__port-info').text(resp.info || '');
+                        $i.removeClass('fa-eye text-muted').addClass('fa-thumbs-up text-success');
+                    } else {
+                        $card.removeClass('is-checking is-online').addClass('is-offline');
+                        $card.find('.wol-card__port-info').text('');
+                        $i.removeClass('fa-eye text-muted').addClass('fa-thumbs-down text-danger');
+                    }
+                    updateStats();
+                }
+            });
         }
     ;
 
 
-    /**
-     * Event Handler
-     */
+    /* ============================================================
+       Event Handlers
+       ============================================================ */
+
+    // Save config from dropdown
     $('#saveConfigToServer').on('click', function () {
         setTimeout(saveConfigToServer, 10);
-    })
+    });
 
+    // Load config choice modal
     $('#loadConfigFromServer').bootstrapChoice({
         modal: '#chooseLoadConfigModal'
         , onClick: function (choice) {
             var rowCount = $('#hostTable tbody tr').length;
             if ('REPLACE' === choice) {
                 $('#hostTable tbody').empty();
+                $('#hostGrid').empty();
                 rowCount = 0;
             }
             if (rowCount !== 0) makeDirty();
@@ -659,33 +785,33 @@ $(function () {
         }
     });
 
+    // Export modal — populate JSON
     $('#exportModal').on('show.bs.modal', function () {
-        $('#exportJson').val(JSON.stringify(getConfiguration()));
+        $('#exportJson').val(JSON.stringify(getConfiguration(), null, 2));
     });
 
+    // Import JSON
     $('#importJsonConfig').on('click', function () {
-        var
-            jsonString = $('#importJson').val()
-            , overwrite = $('#importJsonOverwriteExisting:checked').length
-            , config = []
-        ;
+        var jsonString = $('#importJson').val();
+        var overwrite = $('#importJsonOverwriteExisting:checked').length;
+        var config = [];
 
         $('#importJsonErrorContainer').empty();
 
         try {
             config = JSON.parse(jsonString);
         } catch (err) {
-            $('#importJsonErrorContainer').append([
-                '<div class="alert alert-danger alert-dismissible fade show" role="alert" >'
-                , err
-                , '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" ></button>'
-                , '</div>'
-            ].join());
+            $('#importJsonErrorContainer').append(
+                '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                err +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>'
+            );
             return;
         }
 
         if (overwrite) {
             $('#hostTable tbody').empty();
+            $('#hostGrid').empty();
         }
         makeDirty();
         for (var i = 0; i < config.length; i++) {
@@ -694,29 +820,49 @@ $(function () {
         $('#importModal').modal('hide');
     });
 
-    $('#hostTable tbody').on('click', '.btnRemoveHost', function (event) {
+    // Remove host — from card click
+    $('#hostGrid').on('click', '.btnRemoveHost', function (event) {
         event.preventDefault();
-        var
-            $tr = $(this).closest('tr')
-            , wolData = $tr.data('wol')
-        ;
+        event.stopPropagation();
+        var $card = $(this).closest('.wol-card');
+        var wolData;
+        try {
+            wolData = JSON.parse($card.attr('data-wol-card'));
+        } catch (e) { return false; }
 
+        // Find and remove the corresponding table row
+        var cardIdx = $card.index();
+        var $tr = $('#hostTable tbody tr').eq(cardIdx);
+        $tr.remove();
+
+        // Populate form with removed host data (for easy re-add)
         $('#mac').val(wolData.mac);
         $('#host').val(wolData.host);
         $('#cidr').val(wolData.cidr);
         $('#port').val(wolData.port);
         $('#comment').val(wolData.comment);
-        $tr.remove();
+
+        // Animate card removal
+        $card.css({ transition: 'all 0.25s ease', opacity: 0, transform: 'scale(0.95)' });
+        setTimeout(function () {
+            $card.remove();
+            updateStats();
+            updateEmptyState();
+        }, 260);
+
         makeDirty();
         return false;
-    })
+    });
 
-    $('#hostTable tbody').on('click', '.btnWakeUpHost', function (event) {
+    // Wake host — from card click
+    $('#hostGrid').on('click', '.btnWakeUpHost', function (event) {
         event.preventDefault();
-        var
-            $tr = $(this).closest('tr')
-            , wolData = JSON.parse(JSON.stringify($tr.data('wol')))
-        ;
+        event.stopPropagation();
+        var $card = $(this).closest('.wol-card');
+        var wolData;
+        try {
+            wolData = JSON.parse($card.attr('data-wol-card'));
+        } catch (e) { return false; }
 
         $.ajax({
             url: baseAddress + '?aop=HOST.WAKEUP' + (isDebugEnabled ? '&debug=1' : '')
@@ -725,91 +871,202 @@ $(function () {
             , contentType: 'application/json; charset=utf-8'
             , dataType: 'json'
             , headers: {'X-CSRF-TOKEN': csrfToken}
-            , beforeSend: function (/* xhr */) {
+            , beforeSend: function () {
                 $('#ajaxLoader').fadeIn();
             }
             , complete: function () {
                 $('#ajaxLoader').fadeOut();
             }
             , error: function (jqXHR) {
-                showNotification('<small>Error ' + jqXHR.status + ' calling "' + baseAddress + '": ' + jqXHR.statusText + '<hr>' + jqXHR.responseText + '</small>', 'danger', 10000);
+                showToast('Error ' + jqXHR.status + ': ' + jqXHR.statusText, 'danger');
             }
             , success: function (resp) {
                 if ('string' == typeof resp) {
-                    showNotification(resp);
+                    showToast(resp, 'danger');
                 } else {
                     if (resp.csrfToken) csrfToken = resp.csrfToken;
-                    showNotification(resp['info'], 'success', 5000);
+                    showToast(resp['info'], 'success');
                 }
             }
         });
 
-
         return false;
-    })
+    });
 
+    // FAB — open add host modal
+    $('#fabAddHost').on('click', function () {
+        // Pre-fill defaults from settings
+        var $cidr = $('#cidr');
+        var $port = $('#port');
+        if ($cidr.val() === '') $cidr.val(WolSettings.get('defaultCidr'));
+        if ($port.val() === '') $port.val(WolSettings.get('defaultPort'));
+        var modal = new bootstrap.Modal(document.getElementById('addHostModal'));
+        modal.show();
+    });
+
+    // Add host button (inside modal)
     $('#addHost').on('click', function () {
+        var mac = $('#mac').val();
+        var host = $('#host').val();
+        var cidr = $('#cidr').val();
+        var port = $('#port').val();
+        var comment = $('#comment').val();
+        var msg = '';
 
-        var
-            mac = $('#mac').val()
-            , host = $('#host').val()
-            , cidr = $('#cidr').val()
-            , port = $('#port').val()
-            , comment = $('#comment').val()
-            , msg = ''
-        ;
-
-        if ('' === mac) msg = msg + '<br/>The <strong>mac-address</strong> field must not be empty.'
-        if ('' === host) msg = msg + '<br/>The <strong>host</strong> field must not be empty.'
-        if ('' === cidr) cidr = '24'
-        if ('' === port) port = '9'
-
+        if ('' === mac) msg = msg + 'MAC address is required. ';
+        if ('' === host) msg = msg + 'Host is required. ';
+        if ('' === cidr) cidr = String(WolSettings.get('defaultCidr'));
+        if ('' === port) port = String(WolSettings.get('defaultPort'));
 
         if (/^\d+$/.test(cidr)) {
             if (typeof cidr === 'string') cidr = parseInt(cidr, 10);
-
             if (!(Number.isInteger(cidr) && cidr >= 0 && cidr <= 32)) {
-                msg = msg + '<br/>The <strong>cidr</strong> value is not valid. It must be a number between 0 and 32.';
+                msg = msg + 'CIDR must be 0-32. ';
             }
         } else {
-            msg = msg + '<br/>The <strong>cidr</strong> value is not valid. It must be a purely numeric value.';
+            msg = msg + 'CIDR must be numeric. ';
         }
 
         if (/^\d+$/.test(port)) {
             if (typeof port === 'string') port = parseInt(port, 10);
-
             if (!(Number.isInteger(port) && port > 0 && port <= 65535)) {
-                msg = msg + '<br/>The <strong>port</strong> value is not valid. Port must be between 1 and 65535.';
+                msg = msg + 'Port must be 1-65535. ';
             }
         } else {
-            msg = msg + '<br/>The <strong>port</strong> value is not valid. It must be a purely numeric value.';
+            msg = msg + 'Port must be numeric. ';
         }
 
         var cleanedMac = mac.replace(/[-:]/g, '');
         if (!/^[0-9A-Fa-f]{12}$/.test(cleanedMac)) {
-            msg = msg + '<br/>The <strong>mac-address</strong> is not valid.';
+            msg = msg + 'Invalid MAC address format. ';
         }
 
         if (mac.length === 12) {
-            const isValidMAC = /^[0-9A-Fa-f]{12}$/.test(mac);
+            var isValidMAC = /^[0-9A-Fa-f]{12}$/.test(mac);
             if (isValidMAC) {
                 mac = mac.match(/.{2}/g).join('-');
             }
         }
 
-
         if (msg) {
-            showNotification('Please check your input:' + msg, 'warning', 10000);
+            showToast(msg, 'warning');
             return;
         }
 
         addHost(mac, host, cidr, port, comment);
         makeDirty();
+
+        // Clear form and close modal
+        $('#mac').val('');
+        $('#host').val('');
+        $('#cidr').val('');
+        $('#port').val('');
+        $('#comment').val('');
+        var modalEl = document.getElementById('addHostModal');
+        var modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
     });
 
-    /**
-     * Initialize language switching support
-     */
+
+    /* ============================================================
+       Settings Panel
+       ============================================================ */
+    function openSettings() {
+        $('#settingsOverlay').addClass('is-open');
+        $('#settingsPanel').addClass('is-open');
+    }
+
+    function closeSettings() {
+        $('#settingsOverlay').removeClass('is-open');
+        $('#settingsPanel').removeClass('is-open');
+    }
+
+    $('#openSettings').on('click', openSettings);
+    $('#closeSettings').on('click', closeSettings);
+    $('#settingsOverlay').on('click', closeSettings);
+
+    // Apply settings to UI controls on load
+    function loadSettingsUI() {
+        var s = WolSettings.load();
+        $('#settingTheme').val(s.theme);
+        $('#settingCompact').prop('checked', s.compact);
+        $('#settingInterval').val(String(s.checkInterval));
+        $('#settingAutoRefresh').prop('checked', s.autoRefresh);
+        $('#settingDefaultPort').val(s.defaultPort);
+        $('#settingDefaultCidr').val(s.defaultCidr);
+        $('#settingToastDuration').val(String(s.toastDuration));
+        $('#settingLanguage').val(s.language);
+    }
+
+    function applyTheme(theme) {
+        if (theme === 'auto') {
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        } else {
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+    }
+
+    function applyCompact(compact) {
+        if (compact) {
+            $('body').addClass('view-compact');
+        } else {
+            $('body').removeClass('view-compact');
+        }
+    }
+
+    // Bind setting changes
+    $('#settingTheme').on('change', function () {
+        var val = $(this).val();
+        WolSettings.set('theme', val);
+        applyTheme(val);
+    });
+
+    $('#settingCompact').on('change', function () {
+        var val = $(this).prop('checked');
+        WolSettings.set('compact', val);
+        applyCompact(val);
+    });
+
+    $('#settingInterval').on('change', function () {
+        var val = parseInt($(this).val(), 10);
+        WolSettings.set('checkInterval', val);
+        // Restart check loop
+        if (checkIntervalTimer) clearTimeout(checkIntervalTimer);
+        lastUpdateIndex = 0;
+        if (val > 0) {
+            checkIntervalTimer = setTimeout(checkNextHostState, 500);
+        }
+    });
+
+    $('#settingAutoRefresh').on('change', function () {
+        WolSettings.set('autoRefresh', $(this).prop('checked'));
+    });
+
+    $('#settingDefaultPort').on('change', function () {
+        var val = parseInt($(this).val(), 10);
+        if (val > 0 && val <= 65535) WolSettings.set('defaultPort', val);
+    });
+
+    $('#settingDefaultCidr').on('change', function () {
+        var val = parseInt($(this).val(), 10);
+        if (val >= 0 && val <= 32) WolSettings.set('defaultCidr', val);
+    });
+
+    $('#settingToastDuration').on('change', function () {
+        WolSettings.set('toastDuration', parseInt($(this).val(), 10));
+    });
+
+    $('#settingLanguage').on('change', function () {
+        var val = $(this).val();
+        WolSettings.set('language', val);
+        $.fn.miniI18n(val);
+    });
+
+
+    /* ============================================================
+       Initialize Language Support
+       ============================================================ */
     $.fn.miniI18n({
         debug: false
         , data: {
@@ -821,7 +1078,7 @@ $(function () {
                 , 'import_config': 'Import Configuration'
                 , 'load_config': 'Load Configuration'
                 , 'save_config': 'Save Configuration'
-                , 'mac_address': 'MAC-Address'
+                , 'mac_address': 'MAC Address'
                 , 'ip_or_hostname': 'IP or Hostname'
                 , 'subnet': 'Subnet CIDR'
                 , 'port': 'Port'
@@ -847,12 +1104,12 @@ $(function () {
             , 'es-ES': {
                 'title': 'Wake On Lan'
                 , 'options': 'Opciones'
-                , 'download_config': 'Descargar configuración'
-                , 'export_config': 'Exportar configuración'
-                , 'import_config': 'Importar configuración'
-                , 'load_config': 'Cargar configuración'
-                , 'save_config': 'Guardar configuración'
-                , 'mac_address': 'MAC-Dirección'
+                , 'download_config': 'Descargar configuraci\u00f3n'
+                , 'export_config': 'Exportar configuraci\u00f3n'
+                , 'import_config': 'Importar configuraci\u00f3n'
+                , 'load_config': 'Cargar configuraci\u00f3n'
+                , 'save_config': 'Guardar configuraci\u00f3n'
+                , 'mac_address': 'MAC-Direcci\u00f3n'
                 , 'ip_or_hostname': 'IP o nombre de host'
                 , 'subnet': 'Subred CIDR'
                 , 'port': 'Puerto'
@@ -862,44 +1119,75 @@ $(function () {
     });
 
     // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Enable sorting the table rows with drag&drop
-    $("#hostTable tbody").sortable({
-        helper: function (e, tr) {
-            var $originals = tr.children();
-            var $helper = tr.clone();
-            $helper.children().each(function (index) {
-                $(this).width($originals.eq(index).width())
-            });
-            return $helper;
-        }
-        , items: 'tr'
-        , opacity: 0.9
+    // Enable drag-and-drop sorting on card grid
+    $("#hostGrid").sortable({
+        items: '.wol-card'
+        , handle: '.wol-card__info'
+        , tolerance: 'pointer'
+        , opacity: 0.8
+        , placeholder: 'wol-card'
+        , cursor: 'grabbing'
         , stop: function () {
+            // Re-sync table from card order
+            var $tbody = $('#hostTable tbody');
+            $tbody.empty();
+            $('#hostGrid .wol-card').each(function () {
+                var wolData;
+                try {
+                    wolData = JSON.parse($(this).attr('data-wol-card'));
+                } catch (e) { return; }
+                var hostConfig = $.extend({}, wolData);
+                hostConfig['dataWol'] = JSON.stringify(wolData);
+                var tr = renderTemplate($('#tableRowTemplate').html(), hostConfig);
+                $tbody.append(tr);
+            });
             makeDirty();
         }
-    }).disableSelection();
+    });
 
     $(window).on('beforeunload', function (event) {
         if (!unsavedChangesCount) return;
-        $('#unsavedChangesConfirmation').text();
         var confirmationMessage = 'It looks like you have been editing something. '
             + 'If you leave before saving, your changes will be lost.';
         (event || window.event).returnValue = confirmationMessage;
         return confirmationMessage;
     });
 
-    // Show warning if the sockets extension is not available in php
-    if (!isSocketExtensionLoaded) showNotification($('#textNoSocketExtensionLoaded').html(), 'warning');
 
-    // Finally load the configuration from the server
-    setTimeout(loadConfigFromServer, 10);
+    /* ============================================================
+       Startup
+       ============================================================ */
 
-    // Start updating the host state
-    setTimeout(checkNextHostState, 1000);
+    // Apply saved settings
+    loadSettingsUI();
+    applyTheme(WolSettings.get('theme'));
+    applyCompact(WolSettings.get('compact'));
+
+    // Apply saved language
+    var savedLang = WolSettings.get('language');
+    if (savedLang && savedLang !== 'en-US') {
+        $.fn.miniI18n(savedLang);
+    }
+
+    // Show warning if sockets extension missing
+    if (!isSocketExtensionLoaded) {
+        showToast($('#textNoSocketExtensionLoaded').html(), 'warning', 0);
+    }
+
+    // Load configuration from server
+    if (WolSettings.get('autoRefresh')) {
+        setTimeout(loadConfigFromServer, 10);
+    }
+
+    // Start host status checking
+    var startInterval = WolSettings.get('checkInterval');
+    if (startInterval > 0) {
+        checkIntervalTimer = setTimeout(checkNextHostState, 1000);
+    }
 
 });
