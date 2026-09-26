@@ -207,6 +207,14 @@ Click the gear icon in the header to open the settings sidebar. All settings are
 php tests/test_functions.php
 ```
 
+The `wakeOnLan()` validation tests need PHP's `sockets` extension, which the Docker image
+installs. Without it locally, run them in the image:
+
+```bash
+docker build -t wake-on-lan_plus-test .
+docker run --rm --entrypoint php -v "$PWD":/app:ro -w /app wake-on-lan_plus-test tests/test_functions.php
+```
+
 ---
 
 ## Configuration Format

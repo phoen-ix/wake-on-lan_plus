@@ -119,7 +119,7 @@ These features did **not** exist in the original:
 
 ### `tests/test_functions.php`
 - Tests `safeGet()`, `generateCsrfToken()`, `validateCsrfToken()`, `rotateCsrfToken()`, `checkRateLimit()`, and `wakeOnLan()` validation
-- 28 tests total (27 pass, 1 pre-existing known issue with `safeGet` null handling)
+- 28 tests total, all passing. The `wakeOnLan()` validation tests need the `sockets` extension (the Docker image has it)
 - Run with: `php tests/test_functions.php`
 - Exit code 0 on success, 1 on failure
 

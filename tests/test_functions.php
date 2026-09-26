@@ -67,7 +67,9 @@ $data = ['key1' => 'value1', 'key2' => 0, 'key3' => null];
 assert_equals('value1', safeGet($data, 'key1', 'default'), 'Returns existing value');
 assert_equals('default', safeGet($data, 'missing', 'default'), 'Returns default for missing key');
 assert_equals(0, safeGet($data, 'key2', 'default'), 'Returns 0 without falling back to default');
-assert_equals(null, safeGet($data, 'key3', 'default'), 'Returns null for null value (isset returns false)');
+// isset() is false for null, so an explicit null falls back to the default -- which keeps a JSON
+// {"mac": null} from reaching wakeOnLan() as null.
+assert_equals('default', safeGet($data, 'key3', 'default'), 'Falls back to default for a null value');
 
 // ============================================================
 echo "\n=== generateCsrfToken() ===\n";
