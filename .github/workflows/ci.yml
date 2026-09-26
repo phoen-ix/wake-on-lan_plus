@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the run it supersedes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      # The app image installs the sockets extension that wakeOnLan() needs,
+      # so building it doubles as the Dockerfile check and the test runtime.
+      - name: Build the image
+        run: docker build -t wol-ci .
+
+      - name: Lint (php -l on every PHP file)
+        run: |
+          docker run --rm --entrypoint sh -v "$PWD":/app:ro -w /app wol-ci -c \
+            'find . -name "*.php" -not -path "./.git/*" -print0 | xargs -0 -n1 php -l > /dev/null'
+
+      - name: Test
+        run: docker run --rm --entrypoint php -v "$PWD":/app:ro -w /app wol-ci tests/test_functions.php
