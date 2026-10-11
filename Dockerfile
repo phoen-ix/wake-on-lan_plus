@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.5.11-apache
 
 # Install curl for healthcheck and PHP sockets extension
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*

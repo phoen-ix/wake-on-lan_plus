@@ -29,7 +29,7 @@ This version is a security-hardened, modular rewrite based on the 2024 release. 
   * HOST.WAKEUP changed from GET to POST
 
 ### Docker
-  * Switched from Ubuntu + PPAs to the official `php:8.3-apache` base image (smaller, simpler)
+  * Switched from Ubuntu + PPAs to the official PHP Apache base image, pinned to `php:8.5.11-apache` (smaller, simpler)
   * `.htaccess` / `mod_rewrite` support enabled in the container
   * Authentication environment variables passed through `docker-compose.yml`
   * **HEALTHCHECK** instruction — verifies Apache responsiveness every 30 seconds
