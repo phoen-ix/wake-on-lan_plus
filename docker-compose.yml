@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   wake-on-lan_plus:
-    image: phoen9/wake-on-lan_plus:${WAKE_ON_LAN_PLUS_IMAGE:-latest}
+    image: ghcr.io/phoen-ix/wake-on-lan_plus:${WAKE_ON_LAN_PLUS_IMAGE:-latest}
     container_name: ${CONTAINER_NAME:-wake-on-lan_plus}
     environment:
       - WOL_USERNAME=${WOL_USERNAME:-}

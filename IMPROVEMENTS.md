@@ -344,6 +344,16 @@ Add a service worker and manifest.json to enable Progressive Web App capabilitie
 
 ## Testing
 
+### Completed
+
+#### CI/CD Pipeline
+**Priority:** Medium | **Effort:** Medium | **Impact:** High
+
+`.github/workflows/ci.yml` runs on every push and pull request to `master`: it builds the image (which has the
+`sockets` extension), runs `php -l` on every PHP file and runs `tests/test_functions.php` inside it. After the tests
+pass, the `publish` job pushes `ghcr.io/phoen-ix/wake-on-lan_plus` for `linux/amd64` and `linux/arm64`:
+`latest` + `sha-<short>` from `master`, `X.Y.Z` from `vX.Y.Z` tags, never from pull requests.
+
 ### Future
 
 #### PHPUnit Migration
@@ -378,27 +388,6 @@ Add frontend tests using Jest or similar for:
 - Input validation
 - CSRF token update on response
 - Notification display
-
-#### CI/CD Pipeline
-**Priority:** Medium | **Effort:** Medium | **Impact:** High
-
-Set up GitHub Actions workflow:
-
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: sockets
-      - run: php tests/test_functions.php
-      - run: docker build -t wol-test .
-```
 
 #### Code Coverage
 **Priority:** Low | **Effort:** Low | **Impact:** Medium
@@ -469,6 +458,6 @@ Document all supported environment variables in the README and `example.env`:
 | Features | 0 | 0 | 6 | 6 |
 | Docker | 2 | 0 | 4 | 6 |
 | UX | 2 | 0 | 5 | 7 |
-| Testing | 0 | 0 | 5 | 5 |
+| Testing | 1 | 0 | 4 | 5 |
 | Ops | 1 | 0 | 4 | 5 |
-| **Total** | **10** | **1** | **33** | **44** |
+| **Total** | **11** | **1** | **32** | **44** |

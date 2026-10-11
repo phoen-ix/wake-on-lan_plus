@@ -160,7 +160,7 @@ Browser                         Server (index.php)
 | `WOL_RATE_LIMIT_HOST_CHECK` | Max host checks per window | `30` |
 | `WOL_RATE_LIMIT_HOST_WAKEUP` | Max wake-up requests per window | `5` |
 | `WOL_RATE_LIMIT_WINDOW_SECS` | Rate limit window in seconds | `60` |
-| `WAKE_ON_LAN_PLUS_IMAGE` | Docker image tag | `latest` |
+| `WAKE_ON_LAN_PLUS_IMAGE` | Tag of `ghcr.io/phoen-ix/wake-on-lan_plus` to run (`latest`, `sha-<short>`, `X.Y.Z`) | `latest` |
 | `CONTAINER_NAME` | Docker container name | `wake-on-lan_plus` |
 | `HOST_PORT` | Host port mapping | `3880` |
 | `CONTAINER_PORT` | Container port | `80` |
@@ -234,5 +234,10 @@ php tests/test_functions.php
 docker build -t wake-on-lan_plus .
 ```
 
+The published image is `ghcr.io/phoen-ix/wake-on-lan_plus` (linux/amd64 + linux/arm64). The `publish` job in
+`.github/workflows/ci.yml` builds and pushes it after the `test` job passes: `latest` + `sha-<short>` from `master`,
+`X.Y.Z` from a `vX.Y.Z` tag, never from pull requests. The old Docker Hub image `phoen9/wake-on-lan_plus` is no
+longer updated.
+
 ### Improvements Roadmap
-See `IMPROVEMENTS.md` for a prioritized list of 33 future improvement opportunities, organized by category with effort/impact ratings and code examples.
+See `IMPROVEMENTS.md` for a prioritized list of 32 future improvement opportunities, organized by category with effort/impact ratings and code examples.

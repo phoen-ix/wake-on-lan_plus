@@ -29,6 +29,7 @@ This version is a security-hardened, modular rewrite based on the 2024 release. 
   * HOST.WAKEUP changed from GET to POST
 
 ### Docker
+  * **Image on GHCR** — `ghcr.io/phoen-ix/wake-on-lan_plus`, built by CI for `linux/amd64` and `linux/arm64` after the tests pass
   * Switched from Ubuntu + PPAs to the official PHP Apache base image, pinned to `php:8.5.11-apache` (smaller, simpler)
   * `.htaccess` / `mod_rewrite` support enabled in the container
   * Authentication environment variables passed through `docker-compose.yml`
@@ -77,6 +78,24 @@ docker network create -d macvlan \
 ```bash
 docker compose up -d
 ```
+
+### Image
+
+`docker-compose.yml` pulls `ghcr.io/phoen-ix/wake-on-lan_plus` (GitHub Container Registry), for `linux/amd64` and `linux/arm64`.
+CI publishes it after the tests pass:
+
+| Tag | Source |
+|---|---|
+| `latest` | current `master` |
+| `sha-<short>` | a specific `master` commit |
+| `X.Y.Z` | release tag `vX.Y.Z` |
+
+Pick a tag with `WAKE_ON_LAN_PLUS_IMAGE` in `.env` (default `latest`). To update: `docker compose pull && docker compose up -d`.
+
+> The old Docker Hub image `phoen9/wake-on-lan_plus` (last pushed February 2024, before this rewrite) is no longer updated.
+> If your compose file still says `image: phoen9/wake-on-lan_plus`, switch it to `ghcr.io/phoen-ix/wake-on-lan_plus`.
+
+To build the image yourself instead: `docker build -t wake-on-lan_plus .` and set `image: wake-on-lan_plus` in `docker-compose.yml`.
 
 ### Optional: Enable Authentication
 
@@ -139,7 +158,7 @@ assets/
 tests/
   test_functions.php       Unit tests (run: php tests/test_functions.php)
 Dockerfile                 Docker image definition (with HEALTHCHECK)
-docker-compose.yml         Docker Compose orchestration
+docker-compose.yml         Docker Compose orchestration (pulls the GHCR image)
 entrypoint.sh              Docker entrypoint script (with config backup)
 example.env                Environment variable template
 .htaccess                  Protects config.json and legacy files
