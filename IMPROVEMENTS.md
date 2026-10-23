@@ -258,7 +258,7 @@ The entrypoint now backs up `config.json` before starting Apache, retaining the 
 Use a multi-stage build to reduce final image size by separating build dependencies from runtime.
 
 ```dockerfile
-FROM php:8.3-apache AS runtime
+FROM php:8.5.12-apache AS runtime
 # Only copy what's needed for production
 ```
 

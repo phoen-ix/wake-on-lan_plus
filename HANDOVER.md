@@ -4,7 +4,7 @@
 
 This project is a security-hardened, modular rewrite of [phoen-ix/wake-on-lan_plus](https://github.com/phoen-ix/wake-on-lan_plus) — a PHP web application for sending Wake-on-LAN magic packets to hosts on a local network.
 
-The **original** project was a single monolithic PHP file (`wake-on-lan_plus.php`, ~1622 lines) containing all backend logic, HTML, CSS, and JavaScript inline. This refactored version splits it into a clean modular structure and adds significant security hardening.
+The **original** project was a single monolithic PHP file (`wake-on-lan_plus.php`) containing all backend logic, HTML, CSS, and JavaScript inline. This refactored version splits it into a clean modular structure and adds significant security hardening.
 
 ---
 
@@ -14,14 +14,14 @@ The **original** project was a single monolithic PHP file (`wake-on-lan_plus.php
 
 | Original | Refactored |
 |---|---|
-| `wake-on-lan_plus.php` (1622 lines, everything inline) | `index.php` (~330 lines) — entry point, AJAX routing, HTML |
-| | `includes/auth.php` (~68 lines) — authentication, CSRF tokens, token rotation |
-| | `includes/functions.php` (232 lines) — core WoL functions, helpers |
-| | `assets/app.js` (~680 lines) — mini-i18n, bootstrapChoice, WolSettings manager, card rendering, toast notifications, main app |
-| | `assets/style.css` (~720 lines) — CSS custom properties, dark/light themes, card grid, settings panel, toast system |
-| No tests | `tests/test_functions.php` (~172 lines) — unit tests |
+| `wake-on-lan_plus.php` (everything inline) | `index.php` — entry point, AJAX routing, HTML |
+| | `includes/auth.php` — authentication, CSRF tokens, token rotation |
+| | `includes/functions.php` — core WoL functions, helpers |
+| | `assets/app.js` — mini-i18n, bootstrapChoice, WolSettings manager, card rendering, toast notifications, main app |
+| | `assets/style.css` — CSS custom properties, dark/light themes, card grid, settings panel, toast system |
+| No tests | `tests/test_functions.php` — unit tests |
 
-The original monolith file is retained in the repo but blocked from web access via `.htaccess`.
+The original monolith file is retained in the repo (not copied into the image) and blocked from web access via `.htaccess`.
 
 ### 2.2 Security Additions
 
@@ -33,24 +33,24 @@ These features did **not** exist in the original:
 | **CSRF token rotation** | Token is regenerated after every successful CONFIG.SET and HOST.WAKEUP; new token returned in JSON response and picked up by JS client | `includes/auth.php`, `index.php`, `assets/app.js` |
 | **Rate limiting** | Session-based, per action, configurable via env vars (see Environment Variables) | `includes/functions.php`, `index.php` |
 | **HTTP Basic Auth** | Optional, via `WOL_USERNAME`/`WOL_PASSWORD` env vars, timing-safe comparison | `includes/auth.php` |
-| **SSRF prevention** | Strict allowlist on HOST.CHECK `host` param — only `[a-zA-Z0-9.\-:]` allowed, max 253 chars | `index.php:101-104` |
-| **Security headers** | `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy` | `index.php:170-174`, `includes/functions.php:192-194` |
+| **SSRF prevention** | Strict allowlist on HOST.CHECK `host` param — only `[a-zA-Z0-9.\-:]` allowed, max 253 chars | `index.php` (HOST.CHECK) |
+| **Security headers** | `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy` | `index.php` (before the HTML), `endWithJsonResponse()` |
 | **`.htaccess` rules** | Blocks direct access to `config.json`, the old monolith file, and the `includes/` directory | `.htaccess`, `includes/.htaccess` |
-| **JSON validation** | CONFIG.SET validates that input is an array of objects with `mac` and `host` fields; CONFIG.GET uses `JSON_THROW_ON_ERROR` | `index.php:36-40`, `index.php:64-72` |
-| **Atomic file writes** | Config saves write to a temp file then `rename()` for crash-safe atomic swap | `index.php:75-79` |
-| **MAC regex fix** | Regex anchored with `^`/`$`, consistent `[A-F0-9]` character class to prevent partial matches | `includes/functions.php:40` |
-| **POST for wakeup** | HOST.WAKEUP changed from GET to POST (prevents CSRF via URL) | `index.php:131`, `assets/app.js` |
+| **JSON validation** | CONFIG.SET validates that input is an array of objects with `mac` and `host` fields; CONFIG.GET uses `JSON_THROW_ON_ERROR` | `index.php` (CONFIG.GET, CONFIG.SET) |
+| **Atomic file writes** | Config saves write to a temp file then `rename()` for crash-safe atomic swap | `index.php` (CONFIG.SET) |
+| **MAC regex fix** | Regex anchored with `^`/`$`, consistent `[A-F0-9]` character class to prevent partial matches | `wakeOnLan()` |
+| **POST for wakeup** | HOST.WAKEUP changed from GET to POST (prevents CSRF via URL) | `index.php` (HOST.WAKEUP), `assets/app.js` |
 
 ### 2.3 Docker Changes
 
 | Aspect | Original | Refactored |
 |---|---|---|
-| Base image | `ubuntu:jammy-20240212` + `ppa:ondrej/php` | `php:8.3-apache` (official, smaller) |
+| Base image | `ubuntu:jammy-20240212` + `ppa:ondrej/php` | official `php:<version>-apache` (tag pinned in `Dockerfile`) |
 | File copy | Copies single `wake-on-lan_plus.php` as `index.php` | Copies `index.php`, `includes/`, `assets/`, `.htaccess` |
-| Apache config | Default | Enables `mod_rewrite`, sets `AllowOverride All` |
+| Apache config | Default | Enables `mod_rewrite` (no rule uses it). `AllowOverride All` for `/var/www/` comes from the base image's `docker-php.conf`; the Dockerfile's `sed` on `<Directory /var/www/html>` matches nothing |
 | CMD | `apachectl -D FOREGROUND` | `apache2-foreground` (official entrypoint) |
-| Auth support | None | Passes `WOL_USERNAME`/`WOL_PASSWORD` env vars |
-| Volume mounts | Single `.php` file + config volume | `index.php`, `includes/`, `assets/` (all `:ro`) + config volume |
+| Env vars | None | Passes `WOL_USERNAME`/`WOL_PASSWORD` and `WOL_RATE_LIMIT_*` |
+| Volume mounts | Single `.php` file + config volume | `index.php`, `includes/`, `assets/` (all `:ro`) + `./volume/config/` as the web root (hides the image's `.htaccess`, see Known Considerations) |
 | HEALTHCHECK | None | `curl -f http://localhost/` every 30s with 5s timeout, 3 retries |
 | Config backup | None | Entrypoint backs up `config.json` on start (keeps last 5 in `config_backups/`) |
 
@@ -78,38 +78,37 @@ These features did **not** exist in the original:
 ## 3. File-by-File Reference
 
 ### `index.php`
-- **Lines 1-14**: Requires auth and functions modules, initializes variables
-- **Lines 23-27**: Configurable rate limit variables from environment (with defaults)
-- **Lines 32-168**: AJAX operation routing (CONFIG.GET/SET/DOWNLOAD, HOST.CHECK, HOST.WAKEUP)
+- Top: requires the auth and functions modules, initializes variables, reads the rate limits from the environment (with defaults)
+- AJAX operation routing (CONFIG.GET/SET/DOWNLOAD, HOST.CHECK, HOST.WAKEUP)
   - CONFIG.GET: JSON error handling with `JSON_THROW_ON_ERROR`
   - CONFIG.SET: Atomic writes (temp file + rename), CSRF rotation, new token in response
   - HOST.CHECK: Strict allowlist SSRF validation
   - HOST.WAKEUP: CSRF rotation, new token in response
-- **Lines 170-174**: Security headers for HTML responses
-- **Lines 175+**: Full HTML page — header with stats counter, card grid container, floating add button, save bar, toast container, settings slide-out panel, Bootstrap modals (load config, import, export, add host), script templates, CDN includes
+- Security headers for HTML responses
+- Then the full HTML page — header with stats counter, card grid container, floating add button, save bar, toast container, settings slide-out panel, Bootstrap modals (load config, import, export, add host), script templates, CDN includes
 
 ### `includes/auth.php`
-- **Lines 6-8**: Session initialization
-- **Lines 15-21**: `generateCsrfToken()` — creates/caches 32-byte hex token in `$_SESSION['csrf_token']`
-- **Lines 29-32**: `validateCsrfToken($token)` — timing-safe comparison via `hash_equals()`
-- **Lines 40-44**: `rotateCsrfToken()` — clears and regenerates the CSRF token; called after successful CONFIG.SET and HOST.WAKEUP
-- **Lines 50-65**: HTTP Basic Auth — reads `WOL_USERNAME`/`WOL_PASSWORD` from env, returns 401 if invalid
-- **Line 67**: Generates CSRF token on every request, stored as `$csrfToken`
+- Session initialization
+- `generateCsrfToken()` — creates/caches 32-byte hex token in `$_SESSION['csrf_token']`
+- `validateCsrfToken($token)` — timing-safe comparison via `hash_equals()`
+- `rotateCsrfToken()` — clears and regenerates the CSRF token; called after successful CONFIG.SET and HOST.WAKEUP
+- HTTP Basic Auth — reads `WOL_USERNAME`/`WOL_PASSWORD` from env, returns 401 if invalid
+- Last: generates the CSRF token on every request, stored as `$csrfToken`
 
 ### `includes/functions.php`
-- **Lines 17-138**: `wakeOnLan($mac, $ip, $cidr, $port, &$debugOut)` — validates inputs, builds magic packet, sends via UDP socket
-- **Lines 148-151**: `safeGet($data, $key, $default)` — safe array access
-- **Lines 158-162**: `endWithErrorMessage($message)` — HTTP 500 with HTML-escaped message
-- **Lines 170-201**: `endWithJsonResponse($responseData, $filename)` — JSON response with security headers, optional download
-- **Lines 211-231**: `checkRateLimit($action, $maxRequests, $windowSecs)` — session-based sliding window rate limiter
+- `wakeOnLan($mac, $ip, $cidr, $port, &$debugOut)` — validates inputs, builds magic packet, sends via UDP socket
+- `safeGet($data, $key, $default)` — safe array access
+- `endWithErrorMessage($message)` — HTTP 500 with HTML-escaped message
+- `endWithJsonResponse($responseData, $filename)` — JSON response with security headers, optional download
+- `checkRateLimit($action, $maxRequests, $windowSecs)` — session-based sliding window rate limiter
 
 ### `assets/app.js`
-- **Lines 1-265**: mini-i18n.js library (language switching)
-- **Lines 271-333**: Bootstrap Choice jQuery plugin (modal dialog)
-- **Lines 338-390**: `WolSettings` manager — localStorage-backed settings with defaults for theme, compact view, check interval, auto-refresh, default port/CIDR, toast duration, and language
-- **Lines 395+**: Main application:
+- mini-i18n.js library (language switching)
+- Bootstrap Choice jQuery plugin (modal dialog)
+- `WolSettings` manager — localStorage-backed settings with defaults for theme, compact view, check interval, auto-refresh, default port/CIDR, toast duration, and language
+- Main application:
   - Toast notification system (`showToast`) replacing old alert-based `showNotification`
-  - Card rendering (`renderCard`) and grid sync (`syncCardsFromTable`)
+  - Card rendering (`renderCard`) and grid sync (`syncCardsFromTable`). The hidden `#hostTable` is the source of truth that `getConfiguration()` saves; the cards mirror it
   - Live stats counter (`updateStats`) and empty state management
   - Host add/remove/wake with card animations
   - Settings panel open/close and two-way binding to `WolSettings`
@@ -119,7 +118,7 @@ These features did **not** exist in the original:
 
 ### `tests/test_functions.php`
 - Tests `safeGet()`, `generateCsrfToken()`, `validateCsrfToken()`, `rotateCsrfToken()`, `checkRateLimit()`, and `wakeOnLan()` validation
-- 28 tests total, all passing. The `wakeOnLan()` validation tests need the `sockets` extension (the Docker image has it)
+- The `wakeOnLan()` validation tests need the `sockets` extension (the Docker image has it)
 - Run with: `php tests/test_functions.php`
 - Exit code 0 on success, 1 on failure
 
@@ -162,12 +161,12 @@ Browser                         Server (index.php)
 | `WOL_RATE_LIMIT_WINDOW_SECS` | Rate limit window in seconds | `60` |
 | `WAKE_ON_LAN_PLUS_IMAGE` | Tag of `ghcr.io/phoen-ix/wake-on-lan_plus` to run (`latest`, `sha-<short>`, `X.Y.Z`) | `latest` |
 | `CONTAINER_NAME` | Docker container name | `wake-on-lan_plus` |
-| `HOST_PORT` | Host port mapping | `3880` |
+| `HOST_PORT` | Host port mapping (no effect on the macvlan network) | `3880` |
 | `CONTAINER_PORT` | Container port | `80` |
 
 ### Rate Limits
 
-Rate limits are configurable via environment variables (see above). Defaults:
+Rate limits are configurable via environment variables (see above; `docker-compose.yml` passes them through, empty = default). Defaults:
 
 | Action | Limit | Window |
 |---|---|---|
@@ -182,7 +181,7 @@ Rate limits are configurable via environment variables (see above). Defaults:
 ### Server-side
 - PHP 8.x
 - PHP extensions: `sockets`, `mbstring`
-- Apache with `mod_rewrite` and `AllowOverride All`
+- Apache with `AllowOverride All` (for the `.htaccess` files)
 
 ### Client-side (CDN)
 - Bootstrap 5.3.3
@@ -199,16 +198,17 @@ Rate limits are configurable via environment variables (see above). Defaults:
 
 ## 7. Known Considerations
 
-1. **CDN dependency** — The frontend relies on CDN-hosted libraries. No internet = no Bootstrap/jQuery. The CSP header is configured to allow these CDN origins.
+1. **CDN dependency** — The frontend relies on CDN-hosted libraries (with SRI hashes). No internet = no Bootstrap/jQuery.
 2. **Session-based rate limiting** — Rate limits are per-session, not per-IP. A new session resets limits. Limits are now configurable via environment variables.
 3. **No database** — All configuration is stored in a single `config.json` file. Concurrent writes are protected by atomic rename but there's no multi-user conflict resolution.
-4. **macvlan networking** — Docker deployment requires macvlan network creation, which needs host network privileges and a dedicated IP.
+4. **macvlan networking** — Docker deployment requires macvlan network creation, which needs host network privileges and a dedicated IP. The `ports:` mapping does not apply there (open `http://<ipv4_address>/`), and the Docker host cannot reach its own macvlan containers.
 5. **Legacy file** — The original `wake-on-lan_plus.php` monolith is kept in the repo for reference but blocked from web access. It can be safely deleted.
-6. **Config backups** — The entrypoint creates timestamped backups in `config_backups/` on container start (last 5 kept). These are inside the container; map a volume to persist them.
+6. **Config backups** — The entrypoint creates timestamped backups in `config_backups/` on container start (last 5 kept). With `docker-compose.yml` they land in `./volume/config/config_backups/`.
 7. **Theme system** — Dark/Light/Auto modes selectable in the Settings panel. Auto follows `prefers-color-scheme`. The selected theme is persisted in localStorage.
 8. **No CSP header** — Content-Security-Policy was removed because the app's inline PHP-to-JS bridge (`window.WOL_CONFIG`) and the template engine's use of `new Function()` require `unsafe-inline` and `unsafe-eval`, which negate CSP's value.
-9. **Future improvements** — See `IMPROVEMENTS.md` for a comprehensive roadmap of planned improvements across 7 categories.
+9. **Future improvements** — See `IMPROVEMENTS.md` for the roadmap.
 10. **localStorage dependency** — Settings panel stores user preferences in `localStorage` under the key `wol_settings`. If localStorage is unavailable (e.g., private browsing in some browsers), settings fall back to defaults each page load.
+11. **Web-root mount hides `.htaccess`** — `docker-compose.yml` mounts `./volume/config/` over `/var/www/html/`, so the image's root `.htaccess` is gone: `config.json` and `config_backups/*` are served directly, without Basic Auth (verified 2026-10). The `.htaccess` rule `config\.json$` would not cover the backups (`config.json.<timestamp>`) anyway. A fix needs the config outside the web root.
 
 ---
 
@@ -225,7 +225,7 @@ php tests/test_functions.php
 3. Add corresponding JavaScript in `assets/app.js`
 
 ### Modifying Security Settings
-- Rate limits: Set via `WOL_RATE_LIMIT_*` environment variables, or adjust defaults in `index.php:24-27`
+- Rate limits: Set via `WOL_RATE_LIMIT_*` environment variables, or adjust the defaults at the top of `index.php`
 - CSRF: Logic in `includes/auth.php` — `generateCsrfToken()`, `validateCsrfToken()`, `rotateCsrfToken()`
 - Auth: Controlled by environment variables, logic in `includes/auth.php`
 
@@ -240,4 +240,4 @@ The published image is `ghcr.io/phoen-ix/wake-on-lan_plus` (linux/amd64 + linux/
 longer updated.
 
 ### Improvements Roadmap
-See `IMPROVEMENTS.md` for a prioritized list of 32 future improvement opportunities, organized by category with effort/impact ratings and code examples.
+See `IMPROVEMENTS.md` for a prioritized list of improvement opportunities, organized by category with effort/impact ratings and code examples.

@@ -1,65 +1,58 @@
 # wake-on-lan_plus
+
+A web page for sending Wake-on-LAN magic packets to the computers on your network,
+with a live online/offline status for each host. PHP, a single page, no database: the
+hosts are kept in a `config.json` next to `index.php`. Runs in Docker or on any PHP web
+server.
+
 Forked from [AndiSHFR/wake-on-lan.php](https://github.com/andishfr/wake-on-lan.php), maintained by [phoen-ix](https://github.com/phoen-ix/wake-on-lan_plus).
+This is a security-hardened, modular rewrite of the 2024 release. The image is
+published on GHCR (see [Image](#image)).
 
-## What's New (Refactored Edition)
+## Features
 
-This version is a security-hardened, modular rewrite based on the 2024 release. Key changes:
-
-### Architecture
-  * Refactored from a single 1600-line monolith (`wake-on-lan_plus.php`) into a clean modular structure:
-    - `index.php` — Entry point, AJAX routing, and HTML
-    - `includes/auth.php` — Authentication and CSRF token management
-    - `includes/functions.php` — Core WoL functions and utilities
-    - `assets/app.js` — All client-side JavaScript (mini-i18n, settings manager, card rendering, toast notifications)
-    - `assets/style.css` — All CSS styles (CSS custom properties, dark/light themes)
-  * Unit test suite added (`tests/test_functions.php`)
+  * **Host cards** in a responsive grid, with a pulsing green dot for online hosts, red
+    for offline and amber while a check runs. The header shows "X online / Y total".
+  * **Status checks** on ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS) and 5938
+    (TeamViewer). The card shows the first port that answers.
+  * **Add Host dialog** behind the floating **+** button. It validates MAC, CIDR and port,
+    and pre-fills CIDR and port from Settings.
+  * **Drag-and-drop reordering** of the cards (jQuery UI sortable).
+  * **Floating save bar** while there are unsaved changes.
+  * **Themes:** Dark (default), Light and Auto. Plus a compact list view.
+  * **Settings panel**, stored per browser in `localStorage`.
+  * **Toast notifications.**
+  * **Import/export** of the configuration as JSON, and a download of the saved
+    `config.json`.
 
 ### Security
-  * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via `X-CSRF-TOKEN` header
-  * **CSRF token rotation** — tokens are regenerated after every successful state-changing operation; the new token is returned in the JSON response and picked up by the JavaScript client automatically
-  * **Session-based rate limiting** per action, configurable via environment variables (see below)
-  * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD` environment variables
-  * **SSRF prevention** — strict allowlist validation on the HOST.CHECK `host` parameter (alphanumeric, dots, hyphens, colons only; max 253 chars)
-  * **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`
-  * **`.htaccess` protections** — blocks direct web access to `config.json` and the old monolith file
-  * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials
-  * **JSON structure validation** on configuration saves
-  * **Atomic config file writes** — writes to a temp file and uses `rename()` for crash-safe saves
-  * **Anchored MAC address validation** — regex properly anchored with `^`/`$` to prevent partial matches
-  * HOST.WAKEUP changed from GET to POST
+
+  * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via the `X-CSRF-TOKEN` header.
+  * **CSRF token rotation:** a new token after every successful state-changing operation. It comes back in the JSON response and the JavaScript client picks it up.
+  * **Session-based rate limiting** per action, configurable via environment variables (see below).
+  * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD`.
+  * **SSRF prevention:** an allowlist on the HOST.CHECK `host` parameter (letters, digits, dots, hyphens and colons only; at most 253 characters).
+  * **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`.
+  * **`.htaccess` protections:** they block direct web access to `config.json`, `includes/` and the old monolith file (see the [note](#quick-start-docker-compose) for `docker-compose.yml`).
+  * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials.
+  * **JSON structure validation** on configuration saves.
+  * **Atomic config file writes:** a temp file plus `rename()`.
+  * **Anchored MAC address validation:** the regex is anchored with `^`/`$`.
+  * HOST.WAKEUP is a POST.
 
 ### Docker
-  * **Image on GHCR** — `ghcr.io/phoen-ix/wake-on-lan_plus`, built by CI for `linux/amd64` and `linux/arm64` after the tests pass
-  * Switched from Ubuntu + PPAs to the official PHP Apache base image, pinned to `php:8.5.12-apache` (smaller, simpler)
-  * `.htaccess` / `mod_rewrite` support enabled in the container
-  * Authentication environment variables passed through `docker-compose.yml`
-  * **HEALTHCHECK** instruction — verifies Apache responsiveness every 30 seconds
-  * **Config backup** — the entrypoint automatically backs up `config.json` on container start (keeps the last 5 backups)
 
-### UX
-  * **Redesigned card-based UI** — hosts displayed as individual cards in a responsive grid, replacing the old table layout
-  * **Theme switcher** — Dark (default), Light, and Auto modes via a settings panel; themes powered by CSS custom properties
-  * **Settings panel** — slide-out sidebar with configurable options persisted to localStorage (theme, compact view, check interval, auto-refresh, default port/CIDR, toast duration, language)
-  * **Toast notifications** — slide-in toasts with colored accents replace the old alert bars
-  * **Floating action button** — opens a modal form to add new hosts
-  * **Floating save bar** — appears at the bottom of the screen when unsaved changes exist
-  * **Live status counter** — header shows "X online / Y total" updated in real-time
-  * **Animated status indicators** — pulsing green dot for online hosts, red for offline, amber for checking
-  * **Compact view** — toggle in settings switches from card grid to single-column list
-  * **Drag-and-drop reordering** — cards can be reordered via jQuery UI sortable
-
-### From the 2024 Release
-  * PHP 8.3 compatibility
-  * Value checks for MAC address, CIDR, and port before adding entries
-  * Save and Cancel buttons appear when changes are made
-  * Renamed "Tools" to "Options"
-  * Bootstrap 5.3.3
-  * TeamViewer port (5938) added to host status checks
-  * Default values for CIDR (24) and port (9) if left empty
+  * **Image on GHCR:** `ghcr.io/phoen-ix/wake-on-lan_plus`, built by CI for `linux/amd64` and `linux/arm64` after the tests pass.
+  * Built on the official PHP Apache image (the tag is pinned in [`Dockerfile`](Dockerfile)), with the `sockets` extension.
+  * **HEALTHCHECK:** checks every 30 seconds that Apache responds.
+  * **Config backup:** on every container start, the entrypoint copies `config.json` to `config_backups/` and keeps the last 5 copies.
 
 ---
 
 ## Quick Start (Docker Compose)
+
+A magic packet is a broadcast, so the container has to sit on your LAN. That is why
+`docker-compose.yml` puts it on a macvlan network with its own LAN address.
 
 1. Clone the repository
 2. (Optional) Copy `example.env` to `.env` and adjust values
@@ -79,6 +72,19 @@ docker network create -d macvlan \
 docker compose up -d
 ```
 
+6. Open `http://<ipv4_address>/` from another device on the LAN. On a macvlan network the
+   `ports:` mapping (`HOST_PORT`) does not apply. Also, the Docker host itself cannot reach
+   its own macvlan containers.
+
+`docker-compose.yml` bind-mounts `index.php`, `includes/` and `assets/` from the checkout
+read-only, and `./volume/config/` as the web root (that is where `config.json` and
+`config_backups/` end up). So the app code that runs is the checkout's, and the image
+supplies PHP, Apache and the entrypoint.
+
+> **Note:** the web-root mount also hides the image's `.htaccess`. With this compose file,
+> `config.json` and the files in `config_backups/` can be fetched directly, without Basic
+> Auth. Until that is fixed, keep the container on a network you trust.
+
 ### Image
 
 `docker-compose.yml` pulls `ghcr.io/phoen-ix/wake-on-lan_plus` (GitHub Container Registry), for `linux/amd64` and `linux/arm64`.
@@ -90,7 +96,8 @@ CI publishes it after the tests pass:
 | `sha-<short>` | a specific `master` commit |
 | `X.Y.Z` | release tag `vX.Y.Z` |
 
-Pick a tag with `WAKE_ON_LAN_PLUS_IMAGE` in `.env` (default `latest`). To update: `docker compose pull && docker compose up -d`.
+Pick a tag with `WAKE_ON_LAN_PLUS_IMAGE` in `.env` (default `latest`). To update:
+`git pull` (the mounted app code), then `docker compose pull && docker compose up -d`.
 
 > The old Docker Hub image `phoen9/wake-on-lan_plus` (last pushed February 2024, before this rewrite) is no longer updated.
 > If your compose file still says `image: phoen9/wake-on-lan_plus`, switch it to `ghcr.io/phoen-ix/wake-on-lan_plus`.
@@ -110,7 +117,8 @@ Leave both empty to disable authentication.
 
 ### Optional: Configure Rate Limits
 
-Rate limits are configurable via environment variables:
+The limits count requests per browser session. Set them in `.env`;
+`docker-compose.yml` passes them through, and empty means the default:
 
 ```env
 WOL_RATE_LIMIT_CONFIG_SET=10       # Max config saves per window (default: 10)
@@ -119,13 +127,17 @@ WOL_RATE_LIMIT_HOST_WAKEUP=5       # Max wake-up requests per window (default: 5
 WOL_RATE_LIMIT_WINDOW_SECS=60      # Rate limit window in seconds (default: 60)
 ```
 
+The page checks one host per tick of the check interval. A 1s interval makes up to 60
+checks a minute, which is more than the default `WOL_RATE_LIMIT_HOST_CHECK`. Checks
+over the limit fail, and those hosts show as offline.
+
 ---
 
 ## Requirements (Bare Metal)
 
   * PHP 8.x with the `sockets` and `mbstring` extensions enabled
-  * Apache with `mod_rewrite` and `AllowOverride All` (for `.htaccess` support)
-  * Internet connection for CDN includes (Bootstrap, jQuery, Font Awesome)
+  * Apache with `AllowOverride All` (for the `.htaccess` protections)
+  * Internet connection for CDN includes (Bootstrap, jQuery, jQuery UI, Font Awesome, Google Fonts)
   * Web server must be allowed to write to `config.json`
 
 ## Installation (Bare Metal)
@@ -154,14 +166,15 @@ includes/
   .htaccess                Blocks direct web access to includes/
 assets/
   app.js                   Client-side JavaScript application
-  style.css                CSS styles (includes dark mode)
+  style.css                CSS styles (dark and light themes)
 tests/
   test_functions.php       Unit tests (run: php tests/test_functions.php)
 Dockerfile                 Docker image definition (with HEALTHCHECK)
 docker-compose.yml         Docker Compose orchestration (pulls the GHCR image)
 entrypoint.sh              Docker entrypoint script (with config backup)
 example.env                Environment variable template
-.htaccess                  Protects config.json and legacy files
+.htaccess                  Protects config.json and the legacy file
+wake-on-lan_plus.php       The original single-file app (legacy; not in the image, blocked by .htaccess)
 IMPROVEMENTS.md            Future improvements roadmap
 HANDOVER.md                Developer handover document
 ```
@@ -173,28 +186,33 @@ HANDOVER.md                Developer handover document
 ### Adding a Host
 Click the **+** floating action button (bottom-right corner) to open the Add Host modal.
 
-  * **MAC Address** — Accepts `-` or `:` separators, or raw 12-character hex. Dash separators are added automatically if omitted.
-  * **IP or Hostname** — Required for host status checks and broadcast address calculation.
-  * **CIDR** — Subnet mask in CIDR notation (defaults to the value set in Settings, initially 24).
-  * **Port** — UDP port for the magic packet (defaults to the value set in Settings, initially 9).
-  * **Comment** — Optional description, displayed as the card title.
+  * **MAC Address:** `-` or `:` separators, or the raw 12 hex digits (dashes are then added).
+  * **IP or Hostname:** required. It is used for the status checks and for the broadcast address.
+  * **CIDR:** the subnet size. The default comes from Settings (initially 24).
+  * **Port:** the UDP port for the magic packet. The default comes from Settings (initially 9).
+  * **Comment:** optional. It is shown as the card title.
 
 ### Waking a Host
 Click the power icon button on any host card to send a magic packet.
 
 ### Removing a Host
-Click the trash icon on a host card. The removed host's data is placed into the Add Host form fields so you can re-add it if needed.
+Click the trash icon on a host card. Its data goes into the Add Host form fields, so you can re-add it.
 
 ### Saving
-Click the green **Save** button in the floating save bar (appears at the bottom when changes exist) or use _Options_ > _Save Configuration_.
+Adding, removing, reordering and importing only change the page. Click the green **Save** button
+in the floating save bar (it appears at the bottom when there are changes), or use _Options_ >
+_Save Configuration_. **Cancel** reloads the page.
 
 ### Host Status
-Hosts are continuously checked on ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS), and 5938 (TeamViewer). Each card shows a status indicator:
-  * **Green pulsing dot** — host is online (detected port shown on card)
-  * **Red dot** — host is offline
-  * **Amber dot** — check in progress
+The page checks the hosts one at a time, one per tick of the check interval. A check tries
+ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS) and 5938 (TeamViewer) in that order, each
+with a 3-second timeout. Each card shows a status indicator:
+  * **Green pulsing dot:** the host is online. The card shows the port that answered.
+  * **Red dot:** the host is offline.
+  * **Amber dot:** a check is in progress.
 
-The check interval is configurable in Settings (1s, 2s, 5s, 10s, 30s, or disabled).
+The check interval is configurable in Settings (1s, 2s, 5s, 10s, 30s, or disabled). See
+[Configure Rate Limits](#optional-configure-rate-limits) before choosing 1s.
 
 ### Settings Panel
 Click the gear icon in the header to open the settings sidebar. All settings are saved to `localStorage` and persist across sessions:
@@ -207,18 +225,18 @@ Click the gear icon in the header to open the settings sidebar. All settings are
 | Auto-refresh | Load configuration from server on page open | On |
 | Default port | Pre-filled port for new hosts | 9 |
 | Default CIDR | Pre-filled CIDR for new hosts | 24 |
-| Toast duration | How long notifications stay visible | 5s |
-| Language | Display language (English, Deutsch, Espanol) | English |
+| Toast duration | How long notifications stay visible | 5 seconds |
+| Language | Display language (English, Deutsch, Español) | English |
 
 ### Options Menu
 
 | Option | Description |
 |---|---|
-| Download Configuration | Downloads `config.json` to your computer |
-| Export Configuration | Shows JSON in a modal for manual copy |
-| Import Configuration | Paste JSON to import hosts |
-| Load Configuration | Reloads configuration from the server |
-| Save Configuration | Saves current configuration to the server |
+| Download Configuration | Downloads the configuration saved on the server as `wake-on-lan-<date>-<time>.json` |
+| Export Configuration | Shows the configuration on the page as JSON, for manual copy |
+| Import Configuration | Paste JSON to append hosts, or replace them with **Overwrite existing configuration** |
+| Load Configuration | Reloads the configuration from the server, replacing or appending to the page's hosts |
+| Save Configuration | Saves the page's configuration to the server (only shown while there are unsaved changes) |
 
 ### Running Tests
 
@@ -238,7 +256,7 @@ docker run --rm --entrypoint php -v "$PWD":/app:ro -w /app wake-on-lan_plus-test
 
 ## Configuration Format
 
-Stored as `config.json` — a JSON array of host objects:
+Stored as `config.json`, a JSON array of host objects:
 
 ```json
 [
@@ -256,12 +274,10 @@ Stored as `config.json` — a JSON array of host objects:
 
 ## Internationalization
 
-Language switching is available via the Settings panel or flag icons in the footer:
-  * English
-  * German (Deutsch)
-  * Spanish (Espanola)
-
-The selected language is persisted in localStorage.
+Language switching is available via the Settings panel or the flag icons in the footer:
+English, German (Deutsch) and Spanish (Español). The selected language is persisted in
+`localStorage`. The translations cover the options menu and the Add Host form labels only;
+the rest of the page stays in English.
 
 ---
 
