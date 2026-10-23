@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { expect, test, type BrowserContext, type Page, type Route } from '@playwright/test'
+import { expect, test, type BrowserContext, type Locator, type Page, type Route } from '@playwright/test'
 
 import { HOSTS, NEW_HOST, seed, type Host } from './seed'
 
@@ -177,6 +177,21 @@ async function shoot(page: Page, name: string, opts: { clipTo?: string; toast?: 
 
 const card = (page: Page, comment: string) => page.locator('#hostGrid .wol-card', { hasText: comment })
 
+/** Resize a textarea (as its drag handle would) to its first `lines` lines,
+ * or all of them, and scroll it to the top: no line cut in half. */
+async function fitLines(textarea: Locator, lines?: number) {
+  await textarea.evaluate((el: HTMLTextAreaElement, max) => {
+    const cs = getComputedStyle(el)
+    const lh = parseFloat(cs.lineHeight)
+    const [top, bottom] = [parseFloat(cs.paddingTop), parseFloat(cs.paddingBottom)]
+    const total = Math.round((el.scrollHeight - top - bottom) / lh)
+    const n = Math.min(max ?? total, total)
+    const borders = el.offsetHeight - el.clientHeight
+    el.style.height = `${borders + top + n * lh + (n === total ? bottom : 0)}px`
+    el.scrollTop = 0
+  }, lines ?? null)
+}
+
 async function openOptions(page: Page) {
   await page.locator('#dropdownOptions').click()
   await expect(page.locator('.dropdown-menu.show')).toBeVisible()
@@ -313,6 +328,8 @@ test('options: export configuration', async ({ page, baseURL }) => {
   await page.locator('#exportConfig').click()
   await expect(page.locator('#exportModal')).toBeVisible()
   await expect(page.locator('#exportJson')).toHaveValue(/"Office workstation"/)
+  // The first host in full.
+  await fitLines(page.locator('#exportJson'), 8)
   await shoot(page, 'config-export')
 })
 
@@ -324,6 +341,7 @@ test('options: import configuration', async ({ page, baseURL }) => {
   await expect(modal).toBeVisible()
   const { up: _up, ...printer } = NEW_HOST
   await modal.locator('#importJson').fill(JSON.stringify([printer], null, 2))
+  await fitLines(modal.locator('#importJson'))
   await shoot(page, 'config-import')
 })
 

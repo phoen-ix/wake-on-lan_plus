@@ -7,9 +7,9 @@
 #
 # PORT_BASE (default 25500): the app on 127.0.0.1:PORT_BASE.
 # COMPOSE_PROJECT_NAME (default wake-on-lan_plus_docs): the container and image
-# name. Never `wake-on-lan_plus`, the container name docker-compose.yml gives a
-# live install. ARTIFACTS: where Playwright's test results go (default: a temp
-# dir). Node and `npm ci` in e2e/ are the caller's.
+# name; only names ending in _docs or _e2e, never a live install's container.
+# ARTIFACTS: where Playwright's test results go (default: a temp dir). Node and
+# `npm ci` in e2e/ are the caller's.
 #
 # No compose: docker-compose.yml needs a macvlan network and a LAN address.
 # The tour needs neither, so a plain `docker run` on the default bridge.
@@ -20,27 +20,34 @@ OUT="${1:-$ROOT/docs/screenshots}"
 OUT="$(mkdir -p "$OUT" && cd "$OUT" && pwd)"
 cd "$ROOT"
 ARTIFACTS="${ARTIFACTS:-$(mktemp -d)}"
+mkdir -p "$ARTIFACTS"
 PORT_BASE="${PORT_BASE:-25500}"
 NAME="${COMPOSE_PROJECT_NAME:-wake-on-lan_plus_docs}"
 NAME="${NAME,,}"
 
 case "$NAME" in
-  wake-on-lan_plus | phytotron | phytotron-dev | vib | fileheron | keyb-dev)
-    echo "docs-screenshots: refusing the live name '$NAME'" >&2
-    exit 1 ;;
+  *_docs | *_e2e) ;;
+  *) echo "docs-screenshots: refusing '$NAME' (only *_docs or *_e2e)" >&2
+     exit 1 ;;
 esac
 
+# Remove only what this run created: a clashing name is someone else's.
+built='' started=''
 teardown() {
   rc=$?
-  [ "$rc" = 0 ] || docker logs --tail=200 "$NAME" >"$ARTIFACTS/container.log" 2>&1 || true
-  docker rm -f "$NAME" >/dev/null 2>&1 || true
-  docker rmi "$NAME" >/dev/null 2>&1 || true
+  if [ -n "$started" ]; then
+    [ "$rc" = 0 ] || docker logs --tail=200 "$NAME" >"$ARTIFACTS/container.log" 2>&1 || true
+    docker rm -f "$NAME" >/dev/null 2>&1 || true
+  fi
+  [ -z "$built" ] || docker rmi "$NAME" >/dev/null 2>&1 || true
   exit "$rc"
 }
 trap teardown EXIT
 
 docker build -q -t "$NAME" . >/dev/null
+built=1
 docker run -d --name "$NAME" -p "127.0.0.1:$PORT_BASE:80" "$NAME" >/dev/null
+started=1
 # The HEALTHCHECK only runs every 30 s; ask Apache directly.
 for i in $(seq 30); do
   curl -fsS -o /dev/null "http://127.0.0.1:$PORT_BASE/" && break

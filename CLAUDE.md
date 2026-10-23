@@ -17,8 +17,8 @@
   docs tour uses `docker build` + `docker run` on the default bridge instead.
 - Docs tour names and ports: container + image `wake-on-lan_plus_docs`
   (`COMPOSE_PROJECT_NAME` overrides), `127.0.0.1:${PORT_BASE:-25500}`; port block
-  25500-25509. The script refuses `wake-on-lan_plus` (a live install's container name) and the
-  fleet's live names. On the fleet VM, never touch `phytotron-*` or `vib-*` containers.
+  25500-25509. The script accepts only names ending in `_docs`/`_e2e` and removes only the
+  container and image it created. On the fleet VM, never touch `phytotron-*` or `vib-*` containers.
 - The tour mocks HOST.CHECK (the demo hosts do not exist) and serves every CDN file from
   `e2e/node_modules`. A request it cannot serve locally fails the test. Bumping a CDN
   version in `index.php` (or the Google Fonts `@import` in `assets/style.css`) needs:
