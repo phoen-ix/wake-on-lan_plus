@@ -5,9 +5,11 @@ with a live online/offline status for each host. PHP, a single page, no database
 hosts are kept in a `config.json` next to `index.php`. Runs in Docker or on any PHP web
 server.
 
+<img src="docs/screenshots/hosts-grid.png" alt="Host grid: six host cards, four online with their open port, two offline" width="800">
+
 Forked from [AndiSHFR/wake-on-lan.php](https://github.com/andishfr/wake-on-lan.php), maintained by [phoen-ix](https://github.com/phoen-ix/wake-on-lan_plus).
 This is a security-hardened, modular rewrite of the 2024 release. The image is
-published on GHCR (see [Image](#image)).
+published on GHCR (see [Image](#image)). **Every screen: [the screenshot gallery](docs/screenshots/README.md).**
 
 ## Features
 
@@ -24,6 +26,8 @@ published on GHCR (see [Image](#image)).
   * **Toast notifications.**
   * **Import/export** of the configuration as JSON, and a download of the saved
     `config.json`.
+
+<img src="docs/screenshots/hosts-add.png" alt="Add Host dialog with MAC, IP, CIDR, port and comment" width="800">
 
 ### Security
 
@@ -169,6 +173,9 @@ assets/
   style.css                CSS styles (dark and light themes)
 tests/
   test_functions.php       Unit tests (run: php tests/test_functions.php)
+e2e/                       Docs screenshot tour (own Node package, Playwright)
+scripts/docs-screenshots.sh  Builds the image, runs the tour, writes docs/screenshots/
+docs/screenshots/          Screenshots + gallery (README.md)
 Dockerfile                 Docker image definition (with HEALTHCHECK)
 docker-compose.yml         Docker Compose orchestration (pulls the GHCR image)
 entrypoint.sh              Docker entrypoint script (with config backup)
@@ -203,6 +210,8 @@ Adding, removing, reordering and importing only change the page. Click the green
 in the floating save bar (it appears at the bottom when there are changes), or use _Options_ >
 _Save Configuration_. **Cancel** reloads the page.
 
+<img src="docs/screenshots/hosts-unsaved.png" alt="A new host added; the save bar shows Unsaved changes with Cancel and Save" width="800">
+
 ### Host Status
 The page checks the hosts one at a time, one per tick of the check interval. A check tries
 ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS) and 5938 (TeamViewer) in that order, each
@@ -228,6 +237,8 @@ Click the gear icon in the header to open the settings sidebar. All settings are
 | Toast duration | How long notifications stay visible | 5 seconds |
 | Language | Display language (English, Deutsch, Español) | English |
 
+<img src="docs/screenshots/settings.png" alt="Settings panel with its defaults" width="800">
+
 ### Options Menu
 
 | Option | Description |
@@ -237,6 +248,8 @@ Click the gear icon in the header to open the settings sidebar. All settings are
 | Import Configuration | Paste JSON to append hosts, or replace them with **Overwrite existing configuration** |
 | Load Configuration | Reloads the configuration from the server, replacing or appending to the page's hosts |
 | Save Configuration | Saves the page's configuration to the server (only shown while there are unsaved changes) |
+
+<img src="docs/screenshots/config-import.png" alt="Import Configuration dialog with one host pasted as JSON" width="800">
 
 ### Running Tests
 
@@ -278,6 +291,27 @@ Language switching is available via the Settings panel or the flag icons in the 
 English, German (Deutsch) and Spanish (Español). The selected language is persisted in
 `localStorage`. The translations cover the options menu and the Add Host form labels only;
 the rest of the page stays in English.
+
+---
+
+## Screenshots
+
+[`docs/screenshots/`](docs/screenshots/README.md) holds one screenshot per screen, made by the
+Playwright tour in [`e2e/docs/`](e2e/docs/). The tour runs against demo hosts on
+documentation-only addresses, and it mocks the host status checks. To regenerate them (Docker
+and Node needed):
+
+```bash
+(cd e2e && npm ci && npx playwright install chromium)
+scripts/docs-screenshots.sh            # default output: docs/screenshots/
+```
+
+It builds the image, runs it as the container `wake-on-lan_plus_docs` on
+`127.0.0.1:${PORT_BASE:-25500}`, seeds it through the app's API, runs the tour, and
+removes the container and the image again. CI runs the same tour as a render check
+(`docs-tour` in `ci.yml`). The **Docs screenshots** workflow (manual) uploads the PNGs as
+an artifact to commit from. Optimise new PNGs with `oxipng -o 4 --strip safe` before
+committing.
 
 ---
 

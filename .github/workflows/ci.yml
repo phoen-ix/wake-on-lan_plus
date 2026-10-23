@@ -40,6 +40,35 @@ jobs:
       - name: Test
         run: docker run --rm --entrypoint php -v "$PWD":/app:ro -w /app wol-ci tests/test_functions.php
 
+  # The docs screenshot tour (e2e/docs/) as a render check: builds the image,
+  # runs it, and fails on a screen that does not render. The PNGs it writes to
+  # $RUNNER_TEMP are thrown away; docs-screenshots.yml is the one to commit from.
+  docs-tour:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+
+      - name: Install Playwright
+        working-directory: e2e
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Docs tour (render check)
+        run: ARTIFACTS="$RUNNER_TEMP/docs-run" scripts/docs-screenshots.sh "$RUNNER_TEMP/screenshots"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: docs-run
+          path: ${{ runner.temp }}/docs-run/
+          retention-days: 7
+
   # Publishes ghcr.io/phoen-ix/wake-on-lan_plus once the tests pass:
   #   master -> latest + sha-<short>, tag v1.2.3 -> 1.2.3.
   # Never from pull requests, and only from this repository (a fork's run

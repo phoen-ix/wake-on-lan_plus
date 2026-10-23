@@ -198,7 +198,7 @@ Rate limits are configurable via environment variables (see above; `docker-compo
 
 ## 7. Known Considerations
 
-1. **CDN dependency** — The frontend relies on CDN-hosted libraries (with SRI hashes). No internet = no Bootstrap/jQuery.
+1. **CDN dependency** — The frontend relies on CDN-hosted libraries (with SRI hashes). No internet = no Bootstrap/jQuery. The docs tour serves the same pinned versions from `e2e/node_modules` (the exact versions are pinned in `e2e/package.json`).
 2. **Session-based rate limiting** — Rate limits are per-session, not per-IP. A new session resets limits. Limits are now configurable via environment variables.
 3. **No database** — All configuration is stored in a single `config.json` file. Concurrent writes are protected by atomic rename but there's no multi-user conflict resolution.
 4. **macvlan networking** — Docker deployment requires macvlan network creation, which needs host network privileges and a dedicated IP. The `ports:` mapping does not apply there (open `http://<ipv4_address>/`), and the Docker host cannot reach its own macvlan containers.
@@ -218,6 +218,10 @@ Rate limits are configurable via environment variables (see above; `docker-compo
 ```bash
 php tests/test_functions.php
 ```
+
+### Docs screenshots
+`scripts/docs-screenshots.sh` (after `npm ci` in `e2e/`) builds the image, runs it as `wake-on-lan_plus_docs` on
+`127.0.0.1:25500`, runs the Playwright tour in `e2e/docs/` and writes `docs/screenshots/`. See README "Screenshots".
 
 ### Adding a New AJAX Operation
 1. Add a new `elseif` block in `index.php` following the existing pattern
