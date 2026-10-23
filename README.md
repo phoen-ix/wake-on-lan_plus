@@ -30,7 +30,7 @@ This version is a security-hardened, modular rewrite based on the 2024 release. 
 
 ### Docker
   * **Image on GHCR** — `ghcr.io/phoen-ix/wake-on-lan_plus`, built by CI for `linux/amd64` and `linux/arm64` after the tests pass
-  * Switched from Ubuntu + PPAs to the official PHP Apache base image, pinned to `php:8.5.11-apache` (smaller, simpler)
+  * Switched from Ubuntu + PPAs to the official PHP Apache base image, pinned to `php:8.5.12-apache` (smaller, simpler)
   * `.htaccess` / `mod_rewrite` support enabled in the container
   * Authentication environment variables passed through `docker-compose.yml`
   * **HEALTHCHECK** instruction — verifies Apache responsiveness every 30 seconds
