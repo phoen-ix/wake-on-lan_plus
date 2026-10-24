@@ -35,7 +35,8 @@ These features did **not** exist in the original:
 | **HTTP Basic Auth** | Optional, via `WOL_USERNAME`/`WOL_PASSWORD` env vars, timing-safe comparison | `includes/auth.php` |
 | **SSRF prevention** | Strict allowlist on HOST.CHECK `host` param — only `[a-zA-Z0-9.\-:]` allowed, max 253 chars | `index.php` (HOST.CHECK) |
 | **Security headers** | `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy` | `index.php` (before the HTML), `endWithJsonResponse()` |
-| **`.htaccess` rules** | Blocks direct access to `config.json`, the old monolith file, and the `includes/` directory | `.htaccess`, `includes/.htaccess` |
+| **Config outside the web root** | `config.json` and `config_backups/` live in `WOL_CONFIG_DIR` (the image sets `/data`; unset = next to `index.php`) | `index.php`, `Dockerfile`, `entrypoint.sh`, `docker-compose.yml` |
+| **`.htaccess` rules** | Blocks direct access to `config.json` (and its temp files and backups), the old monolith file, and the `includes/` directory | `.htaccess`, `includes/.htaccess` |
 | **JSON validation** | CONFIG.SET validates that input is an array of objects with `mac` and `host` fields; CONFIG.GET uses `JSON_THROW_ON_ERROR` | `index.php` (CONFIG.GET, CONFIG.SET) |
 | **Atomic file writes** | Config saves write to a temp file then `rename()` for crash-safe atomic swap | `index.php` (CONFIG.SET) |
 | **MAC regex fix** | Regex anchored with `^`/`$`, consistent `[A-F0-9]` character class to prevent partial matches | `wakeOnLan()` |
@@ -47,12 +48,12 @@ These features did **not** exist in the original:
 |---|---|---|
 | Base image | `ubuntu:jammy-20240212` + `ppa:ondrej/php` | official `php:<version>-apache` (tag pinned in `Dockerfile`) |
 | File copy | Copies single `wake-on-lan_plus.php` as `index.php` | Copies `index.php`, `includes/`, `assets/`, `.htaccess` |
-| Apache config | Default | Enables `mod_rewrite` (no rule uses it). `AllowOverride All` for `/var/www/` comes from the base image's `docker-php.conf`; the Dockerfile's `sed` on `<Directory /var/www/html>` matches nothing |
+| Apache config | Default | Unchanged: `AllowOverride All` for `/var/www/` (the `.htaccess` files) comes from the base image's `docker-php.conf` |
 | CMD | `apachectl -D FOREGROUND` | `apache2-foreground` (official entrypoint) |
-| Env vars | None | Passes `WOL_USERNAME`/`WOL_PASSWORD` and `WOL_RATE_LIMIT_*` |
-| Volume mounts | Single `.php` file + config volume | `index.php`, `includes/`, `assets/` (all `:ro`) + `./volume/config/` as the web root |
+| Env vars | None | Image sets `WOL_CONFIG_DIR=/data`; compose passes `WOL_USERNAME`/`WOL_PASSWORD` and `WOL_RATE_LIMIT_*` |
+| Volume mounts | Single `.php` file + config volume | `./volume/config/` at `/data` only; the app code is the image's |
 | HEALTHCHECK | None | `curl -f http://localhost/` every 30s with 5s timeout, 3 retries |
-| Config backup | None | Entrypoint backs up `config.json` on start (keeps last 5 in `config_backups/`) |
+| Config backup | None | Entrypoint makes `WOL_CONFIG_DIR` writable for Apache and backs up `config.json` on start (keeps last 5 in `config_backups/` there) |
 
 ### 2.4 Frontend Changes
 
@@ -78,7 +79,7 @@ These features did **not** exist in the original:
 ## 3. File-by-File Reference
 
 ### `index.php`
-- Top: requires the auth and functions modules, initializes variables, reads the rate limits from the environment (with defaults)
+- Top: requires the auth and functions modules, initializes variables, reads the config path (`WOL_CONFIG_DIR`) and the rate limits from the environment (with defaults)
 - AJAX operation routing (CONFIG.GET/SET/DOWNLOAD, HOST.CHECK, HOST.WAKEUP)
   - CONFIG.GET: JSON error handling with `JSON_THROW_ON_ERROR`
   - CONFIG.SET: Atomic writes (temp file + rename), CSRF rotation, new token in response
@@ -153,6 +154,7 @@ Browser                         Server (index.php)
 
 | Variable | Purpose | Default |
 |---|---|---|
+| `WOL_CONFIG_DIR` | Directory of `config.json` and `config_backups/` | `/data` in the image; unset = next to `index.php` |
 | `WOL_USERNAME` | HTTP Basic Auth username | _(empty = auth disabled)_ |
 | `WOL_PASSWORD` | HTTP Basic Auth password | _(empty = auth disabled)_ |
 | `WOL_RATE_LIMIT_CONFIG_SET` | Max config saves per window | `10` |
@@ -203,11 +205,12 @@ Rate limits are configurable via environment variables (see above; `docker-compo
 3. **No database** — All configuration is stored in a single `config.json` file. Concurrent writes are protected by atomic rename but there's no multi-user conflict resolution.
 4. **macvlan networking** — Docker deployment requires macvlan network creation, which needs host network privileges and a dedicated IP. The `ports:` mapping does not apply there (open `http://<ipv4_address>/`), and the Docker host cannot reach its own macvlan containers.
 5. **Legacy file** — The original `wake-on-lan_plus.php` monolith is kept in the repo for reference but blocked from web access. It can be safely deleted.
-6. **Config backups** — The entrypoint creates timestamped backups in `config_backups/` on container start (last 5 kept). With `docker-compose.yml` they land in `./volume/config/config_backups/`.
+6. **Config backups** — The entrypoint creates timestamped backups in `$WOL_CONFIG_DIR/config_backups/` on container start (last 5 kept). With `docker-compose.yml` they land in `./volume/config/config_backups/`.
 7. **Theme system** — Dark/Light/Auto modes selectable in the Settings panel. Auto follows `prefers-color-scheme`. The selected theme is persisted in localStorage.
 8. **No CSP header** — Content-Security-Policy was removed because the app's inline PHP-to-JS bridge (`window.WOL_CONFIG`) and the template engine's use of `new Function()` require `unsafe-inline` and `unsafe-eval`, which negate CSP's value.
 9. **Future improvements** — See `IMPROVEMENTS.md` for the roadmap.
 10. **localStorage dependency** — Settings panel stores user preferences in `localStorage` under the key `wol_settings`. If localStorage is unavailable (e.g., private browsing in some browsers), settings fall back to defaults each page load.
+11. **Never mount over the web root** — Until 2026-10, `docker-compose.yml` mounted `./volume/config/` over `/var/www/html/` (plus the app code on top). That hid the image's `.htaccess` and served `config.json` and its backups without Basic Auth. The config now lives in `/data`; the upgrade steps are in the README. `tests/test_functions.php` fails if `docker-compose.yml` mounts anything into `/var/www/html`.
 
 ---
 

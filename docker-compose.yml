@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   wake-on-lan_plus:
     image: ghcr.io/phoen-ix/wake-on-lan_plus:${WAKE_ON_LAN_PLUS_IMAGE:-latest}
@@ -17,10 +15,8 @@ services:
       macvlan_network:
         ipv4_address: 192.168.1.x # Specify a free IP address from your LAN
     volumes:
-      - ./index.php:/var/www/html/index.php:ro
-      - ./includes/:/var/www/html/includes/:ro
-      - ./assets/:/var/www/html/assets/:ro
-      - './volume/config/:/var/www/html/'
+      # config.json and config_backups/, outside the web root (WOL_CONFIG_DIR)
+      - ./volume/config/:/data
 
 networks:
   macvlan_network:

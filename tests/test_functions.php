@@ -162,6 +162,24 @@ wakeOnLan('AA:BB:CC:DD:EE:FF', '192.168.1.1', '24', '9', $debug);
 assert_true(count($debug) > 0, 'Debug output is populated');
 
 // ============================================================
+echo "\n=== configFilename() and the Docker layout ===\n";
+// ============================================================
+
+$configDirBefore = getenv('WOL_CONFIG_DIR');
+putenv('WOL_CONFIG_DIR=/srv/wol');
+assert_equals('/srv/wol/config.json', configFilename(), 'Uses WOL_CONFIG_DIR');
+putenv('WOL_CONFIG_DIR');
+assert_equals(dirname(__DIR__) . '/config.json', configFilename(), 'Without WOL_CONFIG_DIR: next to index.php');
+$configDirBefore === false || putenv("WOL_CONFIG_DIR=$configDirBefore");
+
+// A mount over the web root hides the image's .htaccess and serves config.json
+// and config_backups/* to anyone, without Basic Auth.
+$compose = file_get_contents(__DIR__ . '/../docker-compose.yml');
+assert_false(strpos($compose, ':/var/www/html') !== false, 'docker-compose.yml mounts nothing into the web root');
+assert_contains($compose, './volume/config/:/data', 'docker-compose.yml mounts the config at /data');
+assert_contains(file_get_contents(__DIR__ . '/../Dockerfile'), 'ENV WOL_CONFIG_DIR=/data', 'The image keeps the config in /data');
+
+// ============================================================
 echo "\n=== Summary ===\n";
 // ============================================================
 $total = $passed + $failed;

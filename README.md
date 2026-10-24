@@ -2,8 +2,8 @@
 
 A web page for sending Wake-on-LAN magic packets to the computers on your network,
 with a live online/offline status for each host. PHP, a single page, no database: the
-hosts are kept in a `config.json` next to `index.php`. Runs in Docker or on any PHP web
-server.
+hosts are kept in a `config.json` (in Docker: in `/data`, outside the web root). Runs in
+Docker or on any PHP web server.
 
 <img src="docs/screenshots/hosts-grid.png" alt="Host grid: six host cards, four online with their open port, two offline" width="800">
 
@@ -37,7 +37,8 @@ published on GHCR (see [Image](#image)). **Every screen: [the screenshot gallery
   * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD`.
   * **SSRF prevention:** an allowlist on the HOST.CHECK `host` parameter (letters, digits, dots, hyphens and colons only; at most 253 characters).
   * **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`.
-  * **`.htaccess` protections:** they block direct web access to `config.json`, `includes/` and the old monolith file.
+  * **Config outside the web root:** the image keeps `config.json` and its backups in `/data` (`WOL_CONFIG_DIR`).
+  * **`.htaccess` protections:** they block direct web access to `config.json` (and its temp files and backups, for installs that keep it next to `index.php`), `includes/` and the old monolith file.
   * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials.
   * **JSON structure validation** on configuration saves.
   * **Atomic config file writes:** a temp file plus `rename()`.
@@ -49,7 +50,7 @@ published on GHCR (see [Image](#image)). **Every screen: [the screenshot gallery
   * **Image on GHCR:** `ghcr.io/phoen-ix/wake-on-lan_plus`, built by CI for `linux/amd64` and `linux/arm64` after the tests pass.
   * Built on the official PHP Apache image (the tag is pinned in [`Dockerfile`](Dockerfile)), with the `sockets` extension.
   * **HEALTHCHECK:** checks every 30 seconds that Apache responds.
-  * **Config backup:** on every container start, the entrypoint copies `config.json` to `config_backups/` and keeps the last 5 copies.
+  * **Config backup:** on every container start, the entrypoint copies `config.json` to `/data/config_backups/` and keeps the last 5 copies.
 
 ---
 
@@ -80,10 +81,25 @@ docker compose up -d
    `ports:` mapping (`HOST_PORT`) does not apply. Also, the Docker host itself cannot reach
    its own macvlan containers.
 
-`docker-compose.yml` bind-mounts `index.php`, `includes/` and `assets/` from the checkout
-read-only, and `./volume/config/` as the web root (that is where `config.json` and
-`config_backups/` end up). So the app code that runs is the checkout's, and the image
-supplies PHP, Apache and the entrypoint.
+`docker-compose.yml` runs the image's own app code and mounts `./volume/config/` at
+`/data`. That is where `config.json` and `config_backups/` end up, outside the web root.
+
+### Upgrading from a compose file that mounts the web root
+
+Older versions of `docker-compose.yml` mounted `./volume/config/` over the web root
+(`/var/www/html/`) and the app code from the checkout on top. That layout hid the image's
+`.htaccess`, so `config.json` and the backups could be downloaded without Basic Auth. To
+switch to the current layout:
+
+1. `git pull`, then `docker compose pull && docker compose up -d`. The new
+   `docker-compose.yml` mounts the same `./volume/config/` at `/data`, so your hosts and
+   backups stay where they are.
+2. Docker may have left empty `index.php`, `includes/` and `assets/` mount points in
+   `volume/config/`. They are unused; delete them (they belong to root:
+   `sudo rm -r volume/config/index.php volume/config/includes volume/config/assets`).
+3. With your own compose file or `docker run`: mount the directory that holds
+   `config.json` at `/data` instead of `/var/www/html/`, and drop any bind mounts of the
+   app code.
 
 ### Image
 
@@ -97,7 +113,8 @@ CI publishes it after the tests pass:
 | `X.Y.Z` | release tag `vX.Y.Z` |
 
 Pick a tag with `WAKE_ON_LAN_PLUS_IMAGE` in `.env` (default `latest`). To update:
-`git pull` (the mounted app code), then `docker compose pull && docker compose up -d`.
+`docker compose pull && docker compose up -d` (and `git pull` for changes to
+`docker-compose.yml`).
 
 > The old Docker Hub image `phoen9/wake-on-lan_plus` (last pushed February 2024, before this rewrite) is no longer updated.
 > If your compose file still says `image: phoen9/wake-on-lan_plus`, switch it to `ghcr.io/phoen-ix/wake-on-lan_plus`.
@@ -144,7 +161,10 @@ over the limit fail, and those hosts show as offline.
 
 1. Clone the repository or download the zip file
 2. Copy the project files to a directory on your web server
-3. Ensure the web server can write to the directory (for `config.json`)
+3. Ensure the web server can write to the directory (for `config.json`). Or keep the
+   file outside the web root: point the environment variable `WOL_CONFIG_DIR` at a
+   writable directory (for example `SetEnv WOL_CONFIG_DIR /var/lib/wake-on-lan` with
+   mod_php)
 4. Navigate to the `index.php` URL in your browser
 
 ### Enabling the PHP Sockets Extension
@@ -174,7 +194,7 @@ scripts/docs-screenshots.sh  Builds the image, runs the tour, writes docs/screen
 docs/screenshots/          Screenshots + gallery (README.md)
 Dockerfile                 Docker image definition (with HEALTHCHECK)
 docker-compose.yml         Docker Compose orchestration (pulls the GHCR image)
-entrypoint.sh              Docker entrypoint script (with config backup)
+entrypoint.sh              Docker entrypoint script (config dir + backup)
 example.env                Environment variable template
 .htaccess                  Protects config.json and the legacy file
 wake-on-lan_plus.php       The original single-file app (legacy; not in the image, blocked by .htaccess)
@@ -265,7 +285,8 @@ docker run --rm --entrypoint php -v "$PWD":/app:ro -w /app wake-on-lan_plus-test
 
 ## Configuration Format
 
-Stored as `config.json`, a JSON array of host objects:
+Stored as `config.json` in `WOL_CONFIG_DIR` (`/data` in the image; without it, next to
+`index.php`), a JSON array of host objects:
 
 ```json
 [

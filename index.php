@@ -13,7 +13,7 @@ require_once __DIR__ . '/includes/functions.php';
 /**
  * Initialize required variables
  */
-$configFilename = __DIR__ . DIRECTORY_SEPARATOR . "config.json";
+$configFilename = configFilename();
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 $isSocketExtensionLoaded = intval(extension_loaded("sockets"));

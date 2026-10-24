@@ -12,7 +12,8 @@ import { HOSTS, NEW_HOST, seed, type Host } from './seed'
  * `-c playwright.docs.config.ts` against a running container.
  *
  * It is also a render check: every test asserts something screen-specific
- * before it shoots, and a page error fails the test.
+ * before it shoots, and a page error fails the test. The regression checks at
+ * the end take no screenshot.
  *
  * Determinism:
  * - The page loads Bootstrap, jQuery, Font Awesome and Google Fonts from CDNs.
@@ -365,4 +366,10 @@ test('options: load configuration', async ({ page, baseURL }) => {
   await expect(modal).toBeVisible()
   await expect(modal).toContainText('replace')
   await shoot(page, 'config-load')
+})
+
+/* --- regression checks (no screenshot) ------------------------------------ */
+
+test('the .htaccess files apply (no Apache tweaks in the Dockerfile needed)', async ({ request }) => {
+  for (const url of ['/config.json', '/includes/functions.php']) expect((await request.get(url)).status(), url).toBe(403)
 })

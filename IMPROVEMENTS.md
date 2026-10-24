@@ -275,7 +275,7 @@ Update `docker-compose.yml` to use the Dockerfile HEALTHCHECK or add a compose-l
 #### Read-Only Root Filesystem
 **Priority:** Low | **Effort:** Medium | **Impact:** Medium
 
-Configure the container with `read_only: true` and mount only the required writable paths (`/var/www/html/config.json`, `/tmp`).
+Configure the container with `read_only: true` and mount only the required writable paths (`/data` for `config.json` and its backups, `/tmp`).
 
 #### .dockerignore File
 **Priority:** Low | **Effort:** Low | **Impact:** Low

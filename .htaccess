@@ -1,5 +1,5 @@
-# Protect config.json from direct web access
-<FilesMatch "config\.json$">
+# Protect config.json, its temp files and backups from direct web access
+<FilesMatch "^config\.json">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

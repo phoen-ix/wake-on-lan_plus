@@ -1,11 +1,14 @@
 #!/bin/bash
 
-# Fix permissions
-chown -R www-data:www-data /var/www/html
+# config.json and its backups live in WOL_CONFIG_DIR (the image sets /data),
+# outside the web root. Apache (www-data) has to be able to write there.
+CONFIG_DIR="${WOL_CONFIG_DIR:-/data}"
+mkdir -p "$CONFIG_DIR"
+chown -R www-data:www-data "$CONFIG_DIR"
 
 # Backup existing config.json (keep last 5)
-CONFIG_FILE="/var/www/html/config.json"
-BACKUP_DIR="/var/www/html/config_backups"
+CONFIG_FILE="$CONFIG_DIR/config.json"
+BACKUP_DIR="$CONFIG_DIR/config_backups"
 
 if [ -f "$CONFIG_FILE" ]; then
     mkdir -p "$BACKUP_DIR"

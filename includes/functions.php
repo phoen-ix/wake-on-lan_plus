@@ -138,6 +138,17 @@ function wakeOnLan($mac, $ip, $cidr, $port, &$debugOut)
 }
 
 /**
+ * Path of config.json: in WOL_CONFIG_DIR (the image sets /data, outside the web
+ * root), else next to index.php (protected by .htaccess).
+ *
+ * @return string
+ */
+function configFilename()
+{
+    return (getenv('WOL_CONFIG_DIR') ?: dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'config.json';
+}
+
+/**
  * Safely get a value from an array with a default fallback.
  *
  * @param array  $data    The array to read from

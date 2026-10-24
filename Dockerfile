@@ -4,11 +4,8 @@ FROM php:8.5.12-apache
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install sockets
 
-# Enable Apache mod_rewrite for .htaccess support
-RUN a2enmod rewrite
-
-# Enable AllowOverride for .htaccess support
-RUN sed -i '/<Directory \/var\/www\/html>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+# The .htaccess files need no extra Apache setup: the base image's
+# docker-php.conf already sets AllowOverride All for /var/www/.
 
 # Copy application files
 COPY index.php /var/www/html/index.php
@@ -18,6 +15,10 @@ COPY .htaccess /var/www/html/.htaccess
 
 # Remove default index.html
 RUN rm -f /var/www/html/index.html
+
+# config.json and its backups, outside the web root (the entrypoint creates the
+# directory; docker-compose.yml mounts ./volume/config/ there)
+ENV WOL_CONFIG_DIR=/data
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
