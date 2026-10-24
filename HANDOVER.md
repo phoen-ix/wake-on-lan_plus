@@ -50,7 +50,7 @@ These features did **not** exist in the original:
 | Apache config | Default | Enables `mod_rewrite` (no rule uses it). `AllowOverride All` for `/var/www/` comes from the base image's `docker-php.conf`; the Dockerfile's `sed` on `<Directory /var/www/html>` matches nothing |
 | CMD | `apachectl -D FOREGROUND` | `apache2-foreground` (official entrypoint) |
 | Env vars | None | Passes `WOL_USERNAME`/`WOL_PASSWORD` and `WOL_RATE_LIMIT_*` |
-| Volume mounts | Single `.php` file + config volume | `index.php`, `includes/`, `assets/` (all `:ro`) + `./volume/config/` as the web root (hides the image's `.htaccess`, see Known Considerations) |
+| Volume mounts | Single `.php` file + config volume | `index.php`, `includes/`, `assets/` (all `:ro`) + `./volume/config/` as the web root |
 | HEALTHCHECK | None | `curl -f http://localhost/` every 30s with 5s timeout, 3 retries |
 | Config backup | None | Entrypoint backs up `config.json` on start (keeps last 5 in `config_backups/`) |
 
@@ -208,7 +208,6 @@ Rate limits are configurable via environment variables (see above; `docker-compo
 8. **No CSP header** — Content-Security-Policy was removed because the app's inline PHP-to-JS bridge (`window.WOL_CONFIG`) and the template engine's use of `new Function()` require `unsafe-inline` and `unsafe-eval`, which negate CSP's value.
 9. **Future improvements** — See `IMPROVEMENTS.md` for the roadmap.
 10. **localStorage dependency** — Settings panel stores user preferences in `localStorage` under the key `wol_settings`. If localStorage is unavailable (e.g., private browsing in some browsers), settings fall back to defaults each page load.
-11. **Web-root mount hides `.htaccess`** — `docker-compose.yml` mounts `./volume/config/` over `/var/www/html/`, so the image's root `.htaccess` is gone: `config.json` and `config_backups/*` are served directly, without Basic Auth (verified 2026-10). The `.htaccess` rule `config\.json$` would not cover the backups (`config.json.<timestamp>`) anyway. A fix needs the config outside the web root.
 
 ---
 

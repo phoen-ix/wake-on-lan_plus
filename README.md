@@ -37,7 +37,7 @@ published on GHCR (see [Image](#image)). **Every screen: [the screenshot gallery
   * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD`.
   * **SSRF prevention:** an allowlist on the HOST.CHECK `host` parameter (letters, digits, dots, hyphens and colons only; at most 253 characters).
   * **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`.
-  * **`.htaccess` protections:** they block direct web access to `config.json`, `includes/` and the old monolith file (see the [note](#quick-start-docker-compose) for `docker-compose.yml`).
+  * **`.htaccess` protections:** they block direct web access to `config.json`, `includes/` and the old monolith file.
   * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials.
   * **JSON structure validation** on configuration saves.
   * **Atomic config file writes:** a temp file plus `rename()`.
@@ -84,10 +84,6 @@ docker compose up -d
 read-only, and `./volume/config/` as the web root (that is where `config.json` and
 `config_backups/` end up). So the app code that runs is the checkout's, and the image
 supplies PHP, Apache and the entrypoint.
-
-> **Note:** the web-root mount also hides the image's `.htaccess`. With this compose file,
-> `config.json` and the files in `config_backups/` can be fetched directly, without Basic
-> Auth. Until that is fixed, keep the container on a network you trust.
 
 ### Image
 

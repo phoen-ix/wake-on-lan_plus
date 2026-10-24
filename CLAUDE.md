@@ -28,8 +28,6 @@
 - `#hostTable` (hidden) is the source of truth: `getConfiguration()` reads its rows and the
   cards mirror it. Every card change has to update both (see `syncCardsFromTable`, the
   sortable `stop` handler).
-- `config.json` lives in the web root (`__DIR__`). The `docker-compose.yml` web-root mount
-  hides the image's `.htaccess` (HANDOVER "Known Considerations" 11).
 - `wake-on-lan_plus.php` is the pre-rewrite monolith: not in the image, blocked by
   `.htaccess`. Do not edit it; deleting it is the owner's call.
 - i18n (`miniI18n` data at the end of `assets/app.js`) covers the options menu and the
