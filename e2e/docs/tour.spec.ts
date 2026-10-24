@@ -381,3 +381,17 @@ test('a failed wake shows the server message', async ({ page, baseURL }) => {
   await card(page, 'Broken MAC').locator('.btnWakeUpHost').click()
   await expect(page.locator('#toastContainer .wol-toast.toast-danger')).toContainText('Invalid MAC-address: 02-5E-10-00-00')
 })
+
+test('i18n: German labels, and the Load Configuration dialog back in English', async ({ page, baseURL }) => {
+  await open(page, baseURL)
+  await page.locator('[data-lang-switch="de-DE"]').click()
+  await expect(page.locator('label[for="mac"]')).toHaveText('MAC-Adresse')
+  await expect(page.locator('#importConfig span')).toHaveText('Konfiguration importieren')
+  await page.locator('[data-lang-switch="en-US"]').click()
+  await openOptions(page)
+  await page.locator('#loadConfigFromServer').click()
+  const modal = page.locator('#chooseLoadConfigModal')
+  await expect(modal).toBeVisible()
+  await expect(modal).toContainText('Do you want to replace the existing configuration?')
+  await expect(modal).toContainText('Or do you want to append to the existing configuration?')
+})

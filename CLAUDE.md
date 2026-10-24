@@ -34,9 +34,9 @@
   (`tests/test_functions.php` checks `docker-compose.yml`).
 - `wake-on-lan_plus.php` is the pre-rewrite monolith: not in the image, blocked by
   `.htaccess`. Do not edit it; deleting it is the owner's call.
-- i18n (`miniI18n` data at the end of `assets/app.js`) covers the options menu and the
-  Add Host labels only. `en-US` has empty `c_replace_config`/`c_append_config`, which
-  blank the Load Configuration dialog after switching back to English.
+- i18n (`miniI18n` data at the end of `assets/app.js`) covers the options menu, the
+  Load Configuration dialog text and the Add Host labels only. Every key needs a
+  non-empty value in each language: an empty one blanks the element.
 - Regression checks for app fixes go at the end of `e2e/docs/tour.spec.ts` (no
   screenshot), so they run wherever the tour runs (CI `docs-tour`, fleet `--with docs`).
 - Commit style: plain imperative subject, no prefix. End with the Co-Authored-By trailer

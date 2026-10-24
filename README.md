@@ -307,8 +307,8 @@ Stored as `config.json` in `WOL_CONFIG_DIR` (`/data` in the image; without it, n
 
 Language switching is available via the Settings panel or the flag icons in the footer:
 English, German (Deutsch) and Spanish (Español). The selected language is persisted in
-`localStorage`. The translations cover the options menu and the Add Host form labels only;
-the rest of the page stays in English.
+`localStorage`. The translations cover the options menu, the Load Configuration question
+and the Add Host form labels only; the rest of the page stays in English.
 
 ---
 

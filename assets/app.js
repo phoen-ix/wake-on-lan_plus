@@ -667,6 +667,7 @@ $(function () {
                         for (var i = 0; i < resp.length; i++) {
                             addHost(resp[i].mac, resp[i].host, resp[i].cidr, resp[i].port, resp[i].comment);
                         }
+                        updateEmptyState();
                         if (!doNotMakeClean) makeClean();
                     }
                 }
@@ -674,7 +675,6 @@ $(function () {
         }
 
         , uiEventsBound = false
-                        updateEmptyState();
 
         , updateUi = function () {
             var $saveBar = $('#saveBar');
@@ -1092,22 +1092,25 @@ $(function () {
                 , 'port': 'Port'
                 , 'comment': 'Comment'
                 , 'c_load_configuration': 'Load Configuration'
-                , 'c_replace_config': ''
-                , 'c_append_config': ''
+                , 'c_replace_config': 'Do you want to <strong>replace</strong> the existing configuration?'
+                , 'c_append_config': 'Or do you want to <strong>append to</strong> the existing configuration?'
             }
             , 'de-DE': {
                 'title': 'Wake On Lan'
                 , 'options': 'Optionen'
                 , 'download_config': 'Konfiguration herunterladen'
                 , 'export_config': 'Konfiguration exportieren'
-                , 'import_config': 'Konfiguration Importieren'
+                , 'import_config': 'Konfiguration importieren'
                 , 'load_config': 'Konfiguration laden'
                 , 'save_config': 'Konfiguration speichern'
-                , 'mac_address': 'MAC-Addresse'
+                , 'mac_address': 'MAC-Adresse'
                 , 'ip_or_hostname': 'IP oder Hostname'
-                , 'subnet': 'Subnet CIDR'
+                , 'subnet': 'Subnetz-CIDR'
                 , 'port': 'Port'
                 , 'comment': 'Bemerkung'
+                , 'c_load_configuration': 'Konfiguration laden'
+                , 'c_replace_config': 'M\u00f6chten Sie die bestehende Konfiguration <strong>ersetzen</strong>?'
+                , 'c_append_config': 'Oder m\u00f6chten Sie sie an die bestehende Konfiguration <strong>anh\u00e4ngen</strong>?'
             }
             , 'es-ES': {
                 'title': 'Wake On Lan'
@@ -1117,11 +1120,14 @@ $(function () {
                 , 'import_config': 'Importar configuraci\u00f3n'
                 , 'load_config': 'Cargar configuraci\u00f3n'
                 , 'save_config': 'Guardar configuraci\u00f3n'
-                , 'mac_address': 'MAC-Direcci\u00f3n'
+                , 'mac_address': 'Direcci\u00f3n MAC'
                 , 'ip_or_hostname': 'IP o nombre de host'
                 , 'subnet': 'Subred CIDR'
                 , 'port': 'Puerto'
                 , 'comment': 'Comentario'
+                , 'c_load_configuration': 'Cargar configuraci\u00f3n'
+                , 'c_replace_config': '\u00bfDesea <strong>reemplazar</strong> la configuraci\u00f3n existente?'
+                , 'c_append_config': '\u00bfO desea <strong>a\u00f1adirla</strong> a la configuraci\u00f3n existente?'
             }
         }
     });
