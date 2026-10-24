@@ -139,14 +139,14 @@ The limits count requests per browser session. Set them in `.env`;
 
 ```env
 WOL_RATE_LIMIT_CONFIG_SET=10       # Max config saves per window (default: 10)
-WOL_RATE_LIMIT_HOST_CHECK=30       # Max host checks per window (default: 30)
+WOL_RATE_LIMIT_HOST_CHECK=120      # Max host checks per window (default: 120)
 WOL_RATE_LIMIT_HOST_WAKEUP=5       # Max wake-up requests per window (default: 5)
 WOL_RATE_LIMIT_WINDOW_SECS=60      # Rate limit window in seconds (default: 60)
 ```
 
-The page checks one host per tick of the check interval. A 1s interval makes up to 60
-checks a minute, which is more than the default `WOL_RATE_LIMIT_HOST_CHECK`. Checks
-over the limit fail, and those hosts show as offline.
+The page checks one host per tick of the check interval: at 1s, up to 60 checks a minute
+per open page (the pages of one browser share a session). The default of 120 covers two
+such pages. Checks over the limit fail, and those hosts show as offline.
 
 ---
 
@@ -237,7 +237,8 @@ with a 3-second timeout. Each card shows a status indicator:
   * **Amber dot:** a check is in progress.
 
 The check interval is configurable in Settings (1s, 2s, 5s, 10s, 30s, or disabled). See
-[Configure Rate Limits](#optional-configure-rate-limits) before choosing 1s.
+[Configure Rate Limits](#optional-configure-rate-limits) before lowering the default
+`WOL_RATE_LIMIT_HOST_CHECK`.
 
 ### Settings Panel
 Click the gear icon in the header to open the settings sidebar. All settings are saved to `localStorage` and persist across sessions:

@@ -405,7 +405,7 @@ Add code coverage reporting (Xdebug + PHPUnit) to identify untested paths, parti
 
 Rate limit values are now configurable via environment variables:
 - `WOL_RATE_LIMIT_CONFIG_SET` (default: 10)
-- `WOL_RATE_LIMIT_HOST_CHECK` (default: 30)
+- `WOL_RATE_LIMIT_HOST_CHECK` (default: 120, raised from 30 so a 1s check interval fits)
 - `WOL_RATE_LIMIT_HOST_WAKEUP` (default: 5)
 - `WOL_RATE_LIMIT_WINDOW_SECS` (default: 60)
 
@@ -443,7 +443,7 @@ Document all supported environment variables in the README and `example.env`:
 | `WOL_USERNAME` | _(empty)_ | HTTP Basic Auth username |
 | `WOL_PASSWORD` | _(empty)_ | HTTP Basic Auth password |
 | `WOL_RATE_LIMIT_CONFIG_SET` | `10` | Max config saves per window |
-| `WOL_RATE_LIMIT_HOST_CHECK` | `30` | Max host checks per window |
+| `WOL_RATE_LIMIT_HOST_CHECK` | `120` | Max host checks per window |
 | `WOL_RATE_LIMIT_HOST_WAKEUP` | `5` | Max wake-ups per window |
 | `WOL_RATE_LIMIT_WINDOW_SECS` | `60` | Rate limit window in seconds |
 

@@ -22,7 +22,7 @@ $ajaxOperation = safeGet($_POST, "aop", safeGet($_GET, "aop", ""));
 
 // Configurable rate limits via environment variables (with defaults)
 $rateLimitConfigSet = intval(getenv('WOL_RATE_LIMIT_CONFIG_SET') ?: 10);
-$rateLimitHostCheck = intval(getenv('WOL_RATE_LIMIT_HOST_CHECK') ?: 30);
+$rateLimitHostCheck = intval(getenv('WOL_RATE_LIMIT_HOST_CHECK') ?: 120);
 $rateLimitHostWakeup = intval(getenv('WOL_RATE_LIMIT_HOST_WAKEUP') ?: 5);
 $rateLimitWindowSecs = intval(getenv('WOL_RATE_LIMIT_WINDOW_SECS') ?: 60);
 

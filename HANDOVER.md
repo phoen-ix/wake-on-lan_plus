@@ -158,7 +158,7 @@ Browser                         Server (index.php)
 | `WOL_USERNAME` | HTTP Basic Auth username | _(empty = auth disabled)_ |
 | `WOL_PASSWORD` | HTTP Basic Auth password | _(empty = auth disabled)_ |
 | `WOL_RATE_LIMIT_CONFIG_SET` | Max config saves per window | `10` |
-| `WOL_RATE_LIMIT_HOST_CHECK` | Max host checks per window | `30` |
+| `WOL_RATE_LIMIT_HOST_CHECK` | Max host checks per window | `120` |
 | `WOL_RATE_LIMIT_HOST_WAKEUP` | Max wake-up requests per window | `5` |
 | `WOL_RATE_LIMIT_WINDOW_SECS` | Rate limit window in seconds | `60` |
 | `WAKE_ON_LAN_PLUS_IMAGE` | Tag of `ghcr.io/phoen-ix/wake-on-lan_plus` to run (`latest`, `sha-<short>`, `X.Y.Z`) | `latest` |
@@ -173,7 +173,7 @@ Rate limits are configurable via environment variables (see above; `docker-compo
 | Action | Limit | Window |
 |---|---|---|
 | CONFIG.SET | 10 requests | 60 seconds |
-| HOST.CHECK | 30 requests | 60 seconds |
+| HOST.CHECK | 120 requests | 60 seconds |
 | HOST.WAKEUP | 5 requests | 60 seconds |
 
 ---
