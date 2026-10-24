@@ -102,6 +102,7 @@ These features did **not** exist in the original:
 - `endWithErrorMessage($message)` — HTTP 500 with HTML-escaped message
 - `endWithJsonResponse($responseData, $filename)` — JSON response with security headers, optional download
 - `checkRateLimit($action, $maxRequests, $windowSecs)` — session-based sliding window rate limiter
+- `configFilename()` — path of `config.json`: in `WOL_CONFIG_DIR`, else next to `index.php`
 
 ### `assets/app.js`
 - mini-i18n.js library (language switching)
@@ -118,7 +119,7 @@ These features did **not** exist in the original:
   - Startup: loads saved settings, applies theme/compact/language, starts host status polling
 
 ### `tests/test_functions.php`
-- Tests `safeGet()`, `generateCsrfToken()`, `validateCsrfToken()`, `rotateCsrfToken()`, `checkRateLimit()`, and `wakeOnLan()` validation
+- Tests `safeGet()`, `generateCsrfToken()`, `validateCsrfToken()`, `rotateCsrfToken()`, `checkRateLimit()`, `wakeOnLan()` validation, `configFilename()`, and the Docker layout (no mount into the web root, `ENV WOL_CONFIG_DIR=/data`)
 - The `wakeOnLan()` validation tests need the `sockets` extension (the Docker image has it)
 - Run with: `php tests/test_functions.php`
 - Exit code 0 on success, 1 on failure

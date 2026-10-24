@@ -250,6 +250,11 @@ Added `HEALTHCHECK` to the Dockerfile using `curl` to verify Apache responsivene
 
 The entrypoint now backs up `config.json` before starting Apache, retaining the 5 most recent backups.
 
+#### .dockerignore File
+**Priority:** Low | **Effort:** Low | **Impact:** Low
+
+`.dockerignore` keeps `.git`, `e2e/` (with its `node_modules`), `docs/` and `volume/` out of the build context.
+
 ### Future
 
 #### Multi-Stage Build
@@ -276,20 +281,6 @@ Update `docker-compose.yml` to use the Dockerfile HEALTHCHECK or add a compose-l
 **Priority:** Low | **Effort:** Medium | **Impact:** Medium
 
 Configure the container with `read_only: true` and mount only the required writable paths (`/data` for `config.json` and its backups, `/tmp`).
-
-#### .dockerignore File
-**Priority:** Low | **Effort:** Low | **Impact:** Low
-
-Add a `.dockerignore` to exclude `tests/`, `.git/`, `README.md`, etc., from the Docker build context.
-
-```
-.git
-tests/
-README.md
-LICENSE
-*.png
-.claude/
-```
 
 ---
 
