@@ -172,8 +172,7 @@ putenv('WOL_CONFIG_DIR');
 assert_equals(dirname(__DIR__) . '/config.json', configFilename(), 'Without WOL_CONFIG_DIR: next to index.php');
 $configDirBefore === false || putenv("WOL_CONFIG_DIR=$configDirBefore");
 
-// A mount over the web root hides the image's .htaccess and serves config.json
-// and config_backups/* to anyone, without Basic Auth.
+// A mount over the web root hides the image's .htaccess; the config lives in /data.
 $compose = file_get_contents(__DIR__ . '/../docker-compose.yml');
 assert_false(strpos($compose, ':/var/www/html') !== false, 'docker-compose.yml mounts nothing into the web root');
 assert_contains($compose, './volume/config/:/data', 'docker-compose.yml mounts the config at /data');

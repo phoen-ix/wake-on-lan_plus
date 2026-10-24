@@ -30,8 +30,8 @@
   sortable `stop` handler).
 - `config.json` and `config_backups/` live in `WOL_CONFIG_DIR` (`/data` in the image,
   `./volume/config/` in compose), never in the web root. Never mount anything over
-  `/var/www/html`: it hides `.htaccess` and serves the config without auth
-  (`tests/test_functions.php` checks `docker-compose.yml`).
+  `/var/www/html`: it hides `.htaccess` (`tests/test_functions.php` checks
+  `docker-compose.yml`).
 - `wake-on-lan_plus.php` is the pre-rewrite monolith: not in the image, blocked by
   `.htaccess`. Do not edit it; deleting it is the owner's call.
 - i18n (`miniI18n` data at the end of `assets/app.js`) covers the options menu, the

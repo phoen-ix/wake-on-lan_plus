@@ -87,17 +87,19 @@ docker compose up -d
 ### Upgrading from a compose file that mounts the web root
 
 Older versions of `docker-compose.yml` mounted `./volume/config/` over the web root
-(`/var/www/html/`) and the app code from the checkout on top. That layout hid the image's
-`.htaccess`, so `config.json` and the backups could be downloaded without Basic Auth. To
-switch to the current layout:
+(`/var/www/html/`) and the app code from the checkout on top. To switch to the current
+layout:
 
-1. `git pull`, then `docker compose pull && docker compose up -d`. The new
-   `docker-compose.yml` mounts the same `./volume/config/` at `/data`, so your hosts and
-   backups stay where they are.
-2. Docker may have left empty `index.php`, `includes/` and `assets/` mount points in
+1. Update the checkout and keep your `ipv4_address` edit:
+   `git stash && git pull && git stash pop`. Without git, replace the `volumes:` block by
+   hand. Either way, `volumes:` must then hold only `- ./volume/config/:/data`: the new
+   image reads, writes and backs up the config only in `/data`.
+2. `docker compose pull && docker compose up -d`. The same `./volume/config/` is now
+   mounted at `/data`, so your hosts and backups stay where they are.
+3. Docker may have left empty `index.php`, `includes/` and `assets/` mount points in
    `volume/config/`. They are unused; delete them (they belong to root:
    `sudo rm -r volume/config/index.php volume/config/includes volume/config/assets`).
-3. With your own compose file or `docker run`: mount the directory that holds
+4. With your own compose file or `docker run`: mount the directory that holds
    `config.json` at `/data` instead of `/var/www/html/`, and drop any bind mounts of the
    app code.
 

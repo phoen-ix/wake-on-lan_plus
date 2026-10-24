@@ -210,7 +210,7 @@ Rate limits are configurable via environment variables (see above; `docker-compo
 8. **No CSP header** — Content-Security-Policy was removed because the app's inline PHP-to-JS bridge (`window.WOL_CONFIG`) and the template engine's use of `new Function()` require `unsafe-inline` and `unsafe-eval`, which negate CSP's value.
 9. **Future improvements** — See `IMPROVEMENTS.md` for the roadmap.
 10. **localStorage dependency** — Settings panel stores user preferences in `localStorage` under the key `wol_settings`. If localStorage is unavailable (e.g., private browsing in some browsers), settings fall back to defaults each page load.
-11. **Never mount over the web root** — Until 2026-10, `docker-compose.yml` mounted `./volume/config/` over `/var/www/html/` (plus the app code on top). That hid the image's `.htaccess` and served `config.json` and its backups without Basic Auth. The config now lives in `/data`; the upgrade steps are in the README. `tests/test_functions.php` fails if `docker-compose.yml` mounts anything into `/var/www/html`.
+11. **Never mount over the web root** — A mount over `/var/www/html/` hides the image's `.htaccess`. The config lives in `/data`; the README has the upgrade steps from the old layout (`./volume/config/` over `/var/www/html/`, the app code on top). `tests/test_functions.php` fails if `docker-compose.yml` mounts anything into `/var/www/html`.
 
 ---
 
