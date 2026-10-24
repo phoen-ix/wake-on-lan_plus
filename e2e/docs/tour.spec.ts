@@ -374,3 +374,10 @@ test('a minute of 1 s status checks stays within the default HOST.CHECK limit', 
     expect((await request.get('/index.php?aop=HOST.CHECK&host=127.0.0.1')).status(), `check ${i}`).toBe(200)
   }
 })
+
+test('a failed wake shows the server message', async ({ page, baseURL }) => {
+  const broken = { ...HOSTS[0], mac: '02-5E-10-00-00', comment: 'Broken MAC' }
+  await open(page, baseURL, { hosts: [broken], settings: STICKY_TOASTS })
+  await card(page, 'Broken MAC').locator('.btnWakeUpHost').click()
+  await expect(page.locator('#toastContainer .wol-toast.toast-danger')).toContainText('Invalid MAC-address: 02-5E-10-00-00')
+})

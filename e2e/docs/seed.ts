@@ -16,7 +16,7 @@ export const HOSTS = [
 /** The host the tour adds through the dialog (and imports as JSON). */
 export const NEW_HOST = { mac: '02-5E-10-00-00-40', host: '192.0.2.40', cidr: '24', port: '9', comment: 'Office printer', up: '80 (HTTP)' } as const
 
-export type Host = (typeof HOSTS)[number] | typeof NEW_HOST
+export type Host = { mac: string; host: string; cidr: string; port: string; comment: string; up: string | null }
 
 /** Replace the server's config.json with `hosts` through the app's own API
  * (CONFIG.SET with the page's CSRF token), so it is idempotent. */

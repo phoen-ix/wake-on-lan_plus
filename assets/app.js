@@ -446,6 +446,13 @@ $(function () {
             }
         }
 
+        /* The server's own error text (endWithErrorMessage, the 403/429 texts) as plain
+           text; the status line only when there is none. DOMParser runs nothing. */
+        , ajaxErrorText = function (jqXHR) {
+            var text = new DOMParser().parseFromString(jqXHR.responseText || '', 'text/html').body.textContent.trim();
+            return escHtml(text || ('Error ' + jqXHR.status + ': ' + jqXHR.statusText));
+        }
+
         /* Keep legacy showNotification wired to toast */
         , showNotification = function (message, style, autoClose) {
             if (!message || '' === message) return;
@@ -620,7 +627,7 @@ $(function () {
                     $('#ajaxLoader').fadeOut();
                 }
                 , error: function (jqXHR) {
-                    showToast('Error ' + jqXHR.status + ': ' + jqXHR.statusText, 'danger');
+                    showToast(ajaxErrorText(jqXHR), 'danger');
                 }
                 , success: function (resp) {
                     if ('string' == typeof resp) {
@@ -651,7 +658,7 @@ $(function () {
                     $('#ajaxLoader').fadeOut();
                 }
                 , error: function (jqXHR) {
-                    showToast('Error ' + jqXHR.status + ': ' + jqXHR.statusText, 'danger');
+                    showToast(ajaxErrorText(jqXHR), 'danger');
                 }
                 , success: function (resp) {
                     if ('string' == typeof resp) {
@@ -879,7 +886,7 @@ $(function () {
                 $('#ajaxLoader').fadeOut();
             }
             , error: function (jqXHR) {
-                showToast('Error ' + jqXHR.status + ': ' + jqXHR.statusText, 'danger');
+                showToast(ajaxErrorText(jqXHR), 'danger');
             }
             , success: function (resp) {
                 if ('string' == typeof resp) {

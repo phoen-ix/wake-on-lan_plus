@@ -37,8 +37,6 @@
 - i18n (`miniI18n` data at the end of `assets/app.js`) covers the options menu and the
   Add Host labels only. `en-US` has empty `c_replace_config`/`c_append_config`, which
   blank the Load Configuration dialog after switching back to English.
-- Known UI gap, left as it is (owner's call): server errors reach the toast as
-  "Error 500: Internal Server Error" without the message.
 - Regression checks for app fixes go at the end of `e2e/docs/tour.spec.ts` (no
   screenshot), so they run wherever the tour runs (CI `docs-tour`, fleet `--with docs`).
 - Commit style: plain imperative subject, no prefix. End with the Co-Authored-By trailer
