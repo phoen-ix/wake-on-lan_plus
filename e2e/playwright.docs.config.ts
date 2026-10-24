@@ -29,6 +29,6 @@ export default defineConfig({
     timezoneId: 'Europe/Vienna',
     contextOptions: { reducedMotion: 'reduce' },
     screenshot: 'only-on-failure',
-    trace: 'off',
+    trace: 'retain-on-failure',
   },
 })
