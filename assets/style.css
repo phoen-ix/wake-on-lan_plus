@@ -697,6 +697,16 @@ body::before {
     display: flex;
 }
 
+/* While the save bar is shown: the + button above it, and room to scroll the
+   last card clear of both */
+body:has(.wol-save-bar.is-visible) .wol-fab {
+    bottom: 100px;
+}
+
+body:has(.wol-save-bar.is-visible) #pageContainer {
+    padding-bottom: 180px;
+}
+
 @keyframes barSlideUp {
     from { transform: translateY(100%); }
     to { transform: translateY(0); }

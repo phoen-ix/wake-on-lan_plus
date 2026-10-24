@@ -395,3 +395,43 @@ test('i18n: German labels, and the Load Configuration dialog back in English', a
   await expect(modal).toContainText('Do you want to replace the existing configuration?')
   await expect(modal).toContainText('Or do you want to append to the existing configuration?')
 })
+
+/** Remove the first card, so the save bar shows, and wait for it to settle. */
+async function showSaveBar(page: Page) {
+  const before = await page.locator('#hostGrid .wol-card').count()
+  await page.locator('#hostGrid .wol-card').first().locator('.btnRemoveHost').click()
+  await expect(page.locator('#hostGrid .wol-card')).toHaveCount(before - 1)
+  const bar = page.locator('#saveBar')
+  await expect(bar).toHaveClass(/is-visible/)
+  await bar.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)))
+}
+
+/** Scrolled to the end of the page, the centre of `el` hits `el`: nothing fixed covers it. */
+async function expectUncovered(el: Locator) {
+  await el.page().evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  const hit = await el.evaluate((b) => {
+    const r = b.getBoundingClientRect()
+    return b.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2))
+  })
+  expect(hit).toBe(true)
+}
+
+test('layout: the + button stays clear of the save bar', async ({ page, baseURL }) => {
+  await open(page, baseURL)
+  await showSaveBar(page)
+  const fab = (await page.locator('#fabAddHost').boundingBox())!
+  const bar = (await page.locator('#saveBar').boundingBox())!
+  expect(fab.y + fab.height).toBeLessThanOrEqual(bar.y)
+})
+
+for (const compact of [false, true]) {
+  test(`layout: on a phone${compact ? ' (compact)' : ''}, the last card's buttons can be reached`, async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await open(page, baseURL, { settings: { ...FAST, compact } })
+    const last = page.locator('#hostGrid .wol-card').last()
+    for (const saveBar of [false, true]) {
+      if (saveBar) await showSaveBar(page)
+      for (const btn of ['.btnWakeUpHost', '.btnRemoveHost']) await expectUncovered(last.locator(btn))
+    }
+  })
+}
