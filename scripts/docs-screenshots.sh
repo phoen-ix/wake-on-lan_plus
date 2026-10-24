@@ -59,4 +59,8 @@ cd e2e
 E2E_BASE_URL="http://127.0.0.1:$PORT_BASE" \
   DOCS_SCREENSHOT_DIR="$OUT" \
   npx playwright test -c playwright.docs.config.ts --output "$ARTIFACTS/test-results"
+# The tour saved through CONFIG.SET: the config has to be in /data, not in the web root.
+docker exec "$NAME" test -f /data/config.json &&
+  ! docker exec "$NAME" test -e /var/www/html/config.json ||
+  { echo "docs-screenshots: config.json is not (only) in /data" >&2; exit 1; }
 echo "docs-screenshots: $(find "$OUT" -name '*.png' | wc -l) PNGs in $OUT"
