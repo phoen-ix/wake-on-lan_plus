@@ -36,7 +36,7 @@ Below 768 px the grid becomes one column, and the counter moves under the title.
 
 ## No hosts
 
-The empty state after the last host has been removed and saved.
+The page with no hosts saved yet.
 
 <img src="hosts-empty.png" alt="Empty state: No hosts configured" width="800">
 

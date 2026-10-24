@@ -667,6 +667,7 @@ $(function () {
         }
 
         , uiEventsBound = false
+                        updateEmptyState();
 
         , updateUi = function () {
             var $saveBar = $('#saveBar');

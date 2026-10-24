@@ -230,15 +230,8 @@ test('hosts: compact view', async ({ page, baseURL }) => {
 })
 
 test('hosts: empty', async ({ page, baseURL }) => {
-  // Through the UI: a page that loads an empty config never shows the empty
-  // state (only removing the last card does), so remove it and save.
-  await open(page, baseURL, { hosts: HOSTS.slice(0, 1), settings: { ...FAST, toastDuration: 3000 } })
-  await card(page, HOSTS[0].comment).locator('.btnRemoveHost').click()
-  await expect(page.locator('#saveBar')).toHaveClass(/is-visible/)
-  await page.locator('#saveButton').click()
-  await expect(page.locator('#toastContainer .wol-toast.toast-success')).toContainText('Configuration saved successfully.')
-  await expect(page.locator('#saveBar')).not.toHaveClass(/is-visible/)
-  await expect(page.locator('#statTotal')).toHaveText('0')
+  // A page load with no hosts saved (regression: it used to stay blank).
+  await open(page, baseURL, { hosts: [] })
   await expect(page.locator('#emptyState')).toBeVisible()
   await expect(page.locator('#emptyState')).toContainText('No hosts configured')
   await shoot(page, 'hosts-empty')
