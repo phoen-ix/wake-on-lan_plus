@@ -841,13 +841,16 @@ $(function () {
         event.preventDefault();
         event.stopPropagation();
         var $card = $(this).closest('.wol-card');
+        if ($card.hasClass('is-removing')) return false;
         var wolData;
         try {
             wolData = JSON.parse($card.attr('data-wol-card'));
         } catch (e) { return false; }
 
-        // Find and remove the corresponding table row
-        var cardIdx = $card.index();
+        // Find and remove the corresponding table row. A removed card stays
+        // 260 ms for its animation: count only the cards still in the table.
+        var cardIdx = $('#hostGrid .wol-card').not('.is-removing').index($card);
+        $card.addClass('is-removing');
         var $tr = $('#hostTable tbody tr').eq(cardIdx);
         $tr.remove();
 
