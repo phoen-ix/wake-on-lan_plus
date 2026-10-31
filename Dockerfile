@@ -4,6 +4,10 @@ FROM php:8.5.12-apache
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install sockets
 
+# The production php.ini: PHP warnings go to the log (docker logs), never into a
+# response (they carry server paths, and the page shows error responses as text).
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
 # The .htaccess files need no extra Apache setup: the base image's
 # docker-php.conf already sets AllowOverride All for /var/www/.
 
