@@ -44,7 +44,8 @@
 - `scripts/e2e.sh` runs the image twice: `wake-on-lan_plus_e2e` on `127.0.0.1:PORT_BASE` and
   `wake-on-lan_plus_e2e-auth` (Basic Auth `e2e-admin`, `WOL_RATE_LIMIT_HOST_WAKEUP=1`) on
   `PORT_BASE+1`. One Playwright worker: every test replaces the single `config.json`. A few
-  tests `docker exec` into the open container (`E2E_CONTAINER`): broken config, entrypoint backups.
+  tests `docker exec` into the open container (`E2E_CONTAINER`): broken config, entrypoint backups,
+  the UDP sink that checks the magic packet.
 - Regression tests for app fixes go into the e2e suite (`e2e/tests/`, CI `e2e`); the docs
   tour keeps its older ones at the end of `e2e/docs/tour.spec.ts`.
 - Commit style: plain imperative subject, no prefix. End with the Co-Authored-By trailer

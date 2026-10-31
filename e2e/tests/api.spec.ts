@@ -120,6 +120,24 @@ test.describe('HOST.WAKEUP', () => {
     await expect(toast(page)).toContainText('Magic packet has been sent for 02-5E-10-00-00-11')
   })
 
+  test('the magic packet arrives: FF×6 + MAC×16 on the chosen UDP port', async ({ page, baseURL }) => {
+    // A UDP sink in the container; CIDR 32 makes 127.0.0.1 its own broadcast address.
+    inContainer(
+      'rm -f /tmp/sink.*; nohup php -r \'$s = stream_socket_server("udp://127.0.0.1:40009", $no, $err, STREAM_SERVER_BIND); ' +
+        'touch("/tmp/sink.ready"); $r = [$s]; $w = $e = null; ' +
+        'if (stream_select($r, $w, $e, 60)) file_put_contents("/tmp/sink.hex", bin2hex(stream_socket_recvfrom($s, 2048)));\' ' +
+        '>/dev/null 2>&1 &',
+    )
+    await expect.poll(() => inContainer('ls /tmp')).toContain('sink.ready')
+    const sink = { mac: '02-5E-10-00-00-99', host: '127.0.0.1', cidr: '32', port: '40009', comment: 'UDP sink', up: null }
+    await open(page, baseURL, { hosts: [sink] })
+    await card(page, 'UDP sink').getByRole('button', { name: 'Wake' }).click()
+    await expect(toast(page)).toContainText('Magic packet has been sent for 02-5E-10-00-00-99')
+    await expect
+      .poll(() => inContainer('cat /tmp/sink.hex 2>/dev/null || true'))
+      .toBe('ff'.repeat(6) + '025e10000099'.repeat(16))
+  })
+
   test('unknown or wrong-method operations: "Invalid value for aop!"', async ({ request }) => {
     for (const path of ['/index.php?aop=NOPE', '/index.php?aop=CONFIG.SET', '/index.php?aop=HOST.WAKEUP']) {
       const res = await request.get(path)

@@ -20,7 +20,7 @@ role and error state, each control × the states it has. Roles: **open** (the im
 Auth), and with `WOL_USERNAME`/`WOL_PASSWORD` set **guest** (no or wrong credentials) and **user**.
 There are no other roles, accounts, sign-up, mail or 2FA.
 
-Total: **110 items** (45 route × role cells + 65 feature/state rows): **107 ✅, 3 ❌** (one each of
+Total: **111 items** (45 route × role cells + 66 feature/state rows): **108 ✅, 3 ❌** (one each of
 (a) hardware, (c) other layer, (d) cannot be driven; none (b) or (e)).
 
 ## Routes × roles (`sweep.spec.ts`, one parameterised sweep)
@@ -37,7 +37,7 @@ Total: **110 items** (45 route × role cells + 65 feature/state rows): **107 ✅
 | the page renders (heading, Add Host, no 5xx, no page error) / asks for credentials | ✅ `… › the page renders, no 5xx, no page error` | ✅ `… › the page asks for credentials` | ✅ `… › the page asks for credentials` | ✅ `… › the page renders, no 5xx, no page error` |
 | `/config.json`, `/config.json.tmp.*` (403) | ✅ `… › GET /config.json is not served`, `… /config.json.tmp.1 …` | ✅ | ✅ | ✅ |
 | `/includes/*.php` (403) | ✅ `… › GET /includes/functions.php is not served`, `… auth.php …` | ✅ | ✅ | ✅ |
-| `/wake-on-lan_plus.php`, `/data/config.json` (404) | ✅ `… › GET /wake-on-lan_plus.php is not served`, `… /data/config.json …` | ✅ | ✅ | ✅ |
+| `/wake-on-lan_plus.php` (403), `/data/config.json` (404) | ✅ `… › GET /wake-on-lan_plus.php is not served`, `… /data/config.json …` | ✅ | ✅ | ✅ |
 | security headers on the HTML page | ✅ `sweep.spec.ts › the HTML page sends its security headers` | — | — | — |
 
 "…" = the same test title under each role's `sweep as <role>` describe block.
@@ -53,7 +53,8 @@ Total: **110 items** (45 route × role cells + 65 feature/state rows): **107 ✅
 | wake: server error message in the toast (invalid MAC) | ✅ `tour.spec.ts › a failed wake shows the server message` |
 | wake: unresolvable hostname | ✅ `hosts.spec.ts › wake › an unresolvable hostname shows the server message` |
 | wake: rate limit (5/min) → toast | ✅ `hosts.spec.ts › wake › the sixth wake within a minute is refused (HOST.WAKEUP limit 5)` |
-| wake: the magic packet reaching a real NIC | ❌ (a) needs a sleeping machine on a real LAN (the suite's hosts are RFC 5737 addresses; `wakeOnLan()` packet building and validation: `tests/test_functions.php`, section wakeOnLan) |
+| wake: the magic packet on the wire (FF×6 + MAC×16, chosen UDP port) | ✅ `api.spec.ts › HOST.WAKEUP › the magic packet arrives: FF×6 + MAC×16 on the chosen UDP port` (a UDP sink in the container) |
+| wake: a sleeping machine wakes up | ❌ (a) needs a sleeping machine with a WoL-capable NIC on a real LAN; the packet it would get is checked by the row above |
 | empty state on page load | ✅ `tour.spec.ts › hosts: empty`, `api.spec.ts › the config file › no config.json yet: an empty list, the empty state` |
 | empty state after removing the last host | ✅ `hosts.spec.ts › remove, reorder, save, cancel › removing the last host shows the empty state` |
 | card **Delete** → card gone, Add Host form holds the removed host | ✅ `hosts.spec.ts › remove, reorder, save, cancel › remove: the Add Host form holds the removed host for a re-add; save: gone on the server` |
@@ -119,7 +120,7 @@ Total: **110 items** (45 route × role cells + 65 feature/state rows): **107 ✅
 | CONFIG.SET: broken JSON / not a list / entry without host (500 + reason, file kept) | ✅ `api.spec.ts › CONFIG.SET › broken JSON is refused …`, `not a list …`, `an entry without host …` |
 | CONFIG.SET: rate limit 10/min (429) | ✅ `api.spec.ts › CONFIG.SET › the eleventh save within a minute is refused (limit 10)` |
 | CONFIG.SET: config dir not writable (500 + reason, file kept) | ✅ `api.spec.ts › CONFIG.SET › an unwritable config directory: the save says so, nothing changes` |
-| HOST.CHECK: missing / invalid / too long host (500) | ✅ `api.spec.ts › HOST.CHECK › host "": …`, `host "=192.0.2.11;id": …`, `host "=aaaa…": …` |
+| HOST.CHECK: missing / invalid / too long host (500) | ✅ `api.spec.ts › HOST.CHECK › host "": Parameter host not set.`, `… › host "192.0.2.11;id": Invalid host parameter.`, `… › host "aaaaaaaaaaaaaaaaaaaaaaaa": Invalid host parameter.` |
 | HOST.CHECK: rate limit 120/min (429), a minute at 1 s within it | ✅ `api.spec.ts › HOST.CHECK › the 121st check within a minute is refused (limit 120)`, `tour.spec.ts › a minute of 1 s status checks stays within the default HOST.CHECK limit` |
 | HOST.CHECK: reachable host (isUp + port) | ✅ `api.spec.ts › HOST.CHECK › a reachable host: isUp with the open port` |
 | HOST.WAKEUP: bad CSRF token (403) | ✅ `api.spec.ts › HOST.WAKEUP › without a valid CSRF token: refused, nothing sent` |
