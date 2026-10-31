@@ -1,4 +1,4 @@
-import { request } from '@playwright/test'
+import { request, type APIRequestContext } from '@playwright/test'
 
 /* The demo hosts of the docs tour. Fictional: locally administered MACs (02-…)
  * and documentation-only addresses (RFC 5737, *.example), so a magic packet the
@@ -23,15 +23,20 @@ export type Host = { mac: string; host: string; cidr: string; port: string; comm
 export async function seed(hosts: readonly Host[], baseURL: string): Promise<void> {
   const api = await request.newContext({ baseURL })
   try {
-    const html = await (await api.get('/')).text()
-    const token = /"csrfToken":"([0-9a-f]{64})"/.exec(html)?.[1]
-    if (!token) throw new Error('[seed] no CSRF token in the page')
-    const res = await api.post('/index.php?aop=CONFIG.SET', {
-      headers: { 'X-CSRF-TOKEN': token },
-      data: hosts.map(({ up: _up, ...h }) => h),
-    })
-    if (!res.ok()) throw new Error(`[seed] CONFIG.SET: ${res.status()} ${await res.text()}`)
+    await seedVia(api, hosts)
   } finally {
     await api.dispose()
   }
+}
+
+/** seed() through `api`: its session, its credentials. */
+export async function seedVia(api: APIRequestContext, hosts: readonly Host[]): Promise<void> {
+  const html = await (await api.get('/')).text()
+  const token = /"csrfToken":"([0-9a-f]{64})"/.exec(html)?.[1]
+  if (!token) throw new Error('[seed] no CSRF token in the page')
+  const res = await api.post('/index.php?aop=CONFIG.SET', {
+    headers: { 'X-CSRF-TOKEN': token },
+    data: hosts.map(({ up: _up, ...h }) => h),
+  })
+  if (!res.ok()) throw new Error(`[seed] CONFIG.SET: ${res.status()} ${await res.text()}`)
 }

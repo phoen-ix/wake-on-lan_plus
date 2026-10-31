@@ -191,7 +191,8 @@ assets/
   style.css                CSS styles (dark and light themes)
 tests/
   test_functions.php       Unit tests (run: php tests/test_functions.php)
-e2e/                       Docs screenshot tour (own Node package, Playwright)
+e2e/                       Playwright (own Node package): e2e suite (tests/) + docs tour (docs/)
+scripts/e2e.sh             Builds the image, runs it twice, runs the e2e suite
 scripts/docs-screenshots.sh  Builds the image, runs the tour, writes docs/screenshots/
 docs/screenshots/          Screenshots + gallery (README.md)
 Dockerfile                 Docker image definition (with HEALTHCHECK)
@@ -332,6 +333,21 @@ removes the container and the image again. CI runs the same tour as a render che
 (`docs-tour` in `ci.yml`). The **Docs screenshots** workflow (manual) uploads the PNGs as
 an artifact to commit from. Optimise new PNGs with `oxipng -o 4 --strip safe` before
 committing.
+
+## E2E tests
+
+The Playwright suite in [`e2e/tests/`](e2e/tests/) drives every feature in Chromium: the host grid,
+wake, add/remove/reorder/save, the options menu, every setting, the languages, the AJAX error
+states and limits, and Basic Auth. [`e2e/COVERAGE.md`](e2e/COVERAGE.md) maps each feature to its test.
+
+```bash
+(cd e2e && npm ci && npx playwright install chromium)
+scripts/e2e.sh                         # extra arguments go to Playwright, e.g. -g import
+```
+
+It builds the image and runs it twice on the default bridge: `wake-on-lan_plus_e2e` on
+`127.0.0.1:${PORT_BASE:-25500}`, and `wake-on-lan_plus_e2e-auth` with Basic Auth on the next port.
+Both containers and the image are removed at the end. CI runs it as the `e2e` job in `ci.yml`.
 
 ---
 

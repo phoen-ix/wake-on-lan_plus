@@ -8,7 +8,11 @@
 - Docs screenshots: `(cd e2e && npm ci && npx playwright install chromium)`, then
   `scripts/docs-screenshots.sh [outdir]` (default `docs/screenshots/`), then
   `oxipng -o 4 --strip safe docs/screenshots/*.png`. Gallery: `docs/screenshots/README.md`.
-- In the phoen-ix fleet: `fleet check wake-on-lan_plus` (runs the tests in the image).
+- E2E suite: `(cd e2e && npm ci && npx playwright install chromium)`, then
+  `scripts/e2e.sh [playwright args]` (e.g. `-g import`). Specs in `e2e/tests/`, the
+  feature inventory in `e2e/COVERAGE.md` (add a row for every new feature).
+- In the phoen-ix fleet: `fleet check wake-on-lan_plus` (runs the tests in the image),
+  `--e2e` the e2e suite, `--with docs` the docs tour.
 
 ## Invariants
 
@@ -37,7 +41,11 @@
 - i18n (`miniI18n` data at the end of `assets/app.js`) covers the options menu, the
   Load Configuration dialog text and the Add Host labels only. Every key needs a
   non-empty value in each language: an empty one blanks the element.
-- Regression checks for app fixes go at the end of `e2e/docs/tour.spec.ts` (no
-  screenshot), so they run wherever the tour runs (CI `docs-tour`, fleet `--with docs`).
+- `scripts/e2e.sh` runs the image twice: `wake-on-lan_plus_e2e` on `127.0.0.1:PORT_BASE` and
+  `wake-on-lan_plus_e2e-auth` (Basic Auth `e2e-admin`, `WOL_RATE_LIMIT_HOST_WAKEUP=1`) on
+  `PORT_BASE+1`. One Playwright worker: every test replaces the single `config.json`. A few
+  tests `docker exec` into the open container (`E2E_CONTAINER`): broken config, entrypoint backups.
+- Regression tests for app fixes go into the e2e suite (`e2e/tests/`, CI `e2e`); the docs
+  tour keeps its older ones at the end of `e2e/docs/tour.spec.ts`.
 - Commit style: plain imperative subject, no prefix. End with the Co-Authored-By trailer
   when an agent wrote it.

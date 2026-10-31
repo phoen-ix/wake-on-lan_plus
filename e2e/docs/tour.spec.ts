@@ -1,9 +1,10 @@
-import { mkdirSync, readFileSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { expect, test, type BrowserContext, type Locator, type Page, type Route } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
+import { mockHostCheck, serveCdnLocally } from '../support'
 import { HOSTS, NEW_HOST, seed, type Host } from './seed'
 
 /* The docs tour: one screenshot per screen and key state (the gallery is
@@ -29,7 +30,6 @@ const OUT = path.resolve(
   process.env.DOCS_SCREENSHOT_DIR ?? fileURLToPath(new URL('../../docs/screenshots', import.meta.url)),
 )
 mkdirSync(OUT, { recursive: true })
-const MODULES = fileURLToPath(new URL('../node_modules', import.meta.url))
 
 // The tour does not need the default 2 s between status checks.
 const FAST = { checkInterval: 1000 }
@@ -43,7 +43,7 @@ test.beforeEach(async ({ page, baseURL }) => {
   pageErrors = []
   leaked = []
   page.on('pageerror', (e) => pageErrors.push(e))
-  await serveCdnLocally(page.context(), new URL(baseURL!).host)
+  await serveCdnLocally(page.context(), new URL(baseURL!).host, leaked)
   await page.route(/[?&]aop=HOST\.CHECK/, mockHostCheck)
 })
 
@@ -53,84 +53,6 @@ test.afterEach(async () => {
 })
 
 /* --- helpers -------------------------------------------------------------- */
-
-const TYPES: Record<string, string> = {
-  '.css': 'text/css',
-  '.js': 'application/javascript',
-  '.woff2': 'font/woff2',
-  '.woff': 'font/woff',
-  '.ttf': 'font/ttf',
-  '.eot': 'application/vnd.ms-fontobject',
-  '.svg': 'image/svg+xml',
-}
-// The page loads its CDN files with crossorigin="anonymous" (SRI), fonts are
-// CORS requests anyway: both need the header.
-const CORS = { 'access-control-allow-origin': '*' }
-
-function fulfillFile(route: Route, file: string) {
-  return route.fulfill({
-    body: readFileSync(file),
-    headers: { ...CORS, 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' },
-  })
-}
-
-async function serveCdnLocally(ctx: BrowserContext, appHost: string) {
-  // Registered first, so it only catches what the routes below do not.
-  await ctx.route(
-    (url) => url.host !== appHost && url.protocol !== 'data:',
-    (route) => {
-      leaked.push(route.request().url())
-      return route.abort()
-    },
-  )
-  // cdn.jsdelivr.net/npm/<pkg>@<version>/<file> -> node_modules/<pkg>/<file>,
-  // only when the installed version is the one the page asks for.
-  await ctx.route(/^https:\/\/cdn\.jsdelivr\.net\/npm\//, (route) => {
-    const m = /^https:\/\/cdn\.jsdelivr\.net\/npm\/((?:@[^/]+\/)?[^@/]+)@([^/]+)\/([^?#]+)/.exec(route.request().url())
-    const pkgDir = m && path.join(MODULES, m[1])
-    const installed = pkgDir && JSON.parse(readFileSync(path.join(pkgDir, 'package.json'), 'utf8')).version
-    if (!m || installed !== m[2]) {
-      leaked.push(`${route.request().url()} (installed: ${installed ?? 'none'})`)
-      return route.abort()
-    }
-    return fulfillFile(route, path.join(pkgDir, m[3]))
-  })
-  // fonts.googleapis.com/css2?family=Outfit:wght@300;400… -> the @fontsource
-  // packages' CSS for those weights, its font files served from a fake origin.
-  await ctx.route(/^https:\/\/fonts\.googleapis\.com\/css2\?/, (route) => {
-    const css = new URL(route.request().url()).searchParams
-      .getAll('family')
-      .flatMap((family) => {
-        const [name, axes = 'wght@400'] = family.split(':')
-        const pkg = name.toLowerCase().replace(/ /g, '-')
-        return axes
-          .replace('wght@', '')
-          .split(';')
-          .map((w) =>
-            readFileSync(path.join(MODULES, '@fontsource', pkg, `${w}.css`), 'utf8').replaceAll(
-              'url(./files/',
-              `url(https://fonts.gstatic.com/fontsource/${pkg}/`,
-            ),
-          )
-      })
-      .join('\n')
-    return route.fulfill({ body: css, headers: { ...CORS, 'content-type': 'text/css' } })
-  })
-  await ctx.route(/^https:\/\/fonts\.gstatic\.com\/fontsource\//, (route) => {
-    const [pkg, file] = new URL(route.request().url()).pathname.split('/').slice(2)
-    return fulfillFile(route, path.join(MODULES, '@fontsource', pkg, 'files', file))
-  })
-}
-
-function mockHostCheck(route: Route) {
-  const host = new URL(route.request().url()).searchParams.get('host')
-  const up = [...HOSTS, NEW_HOST].find((h) => h.host === host)?.up
-  return route.fulfill({
-    json: up
-      ? { error: false, isUp: true, info: up, errCode: '', errStr: '', errorPort: '' }
-      : { error: false, isUp: false, errCode: 110, errStr: 'Connection timed out', errorPort: '5938' },
-  })
-}
 
 /** Seed `hosts`, open the page with `settings` in localStorage and wait until
  * every card shows its status. */
