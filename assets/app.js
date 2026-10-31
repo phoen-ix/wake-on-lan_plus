@@ -529,7 +529,17 @@ $(function () {
         , escHtml = function (str) {
             var div = document.createElement('div');
             div.appendChild(document.createTextNode(str || ''));
-            return div.innerHTML;
+            // Quotes too: the cards and table rows carry the host as JSON in a '…' attribute.
+            return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        /* The hidden table row of a host, every value escaped. */
+        , renderRow = function (wol) {
+            var row = { dataWol: escHtml(JSON.stringify(wol)) };
+            $.each(['mac', 'host', 'cidr', 'port', 'comment'], function (i, key) {
+                row[key] = escHtml(null == wol[key] ? '' : String(wol[key]));
+            });
+            return renderTemplate($('#tableRowTemplate').html(), row);
         }
 
         , renderCard = function (mac, host, cidr, port, comment, index) {
@@ -601,9 +611,7 @@ $(function () {
                 port: port,
                 comment: comment
             };
-            hostConfig['dataWol'] = JSON.stringify(hostConfig);
-            var tr = renderTemplate($('#tableRowTemplate').html(), hostConfig);
-            $('#hostTable tbody').append(tr);
+            $('#hostTable tbody').append(renderRow(hostConfig));
 
             // Add card to grid
             $('#hostGrid').append(renderCard(mac, host, cidr, port, comment, cardIndex));
@@ -1155,10 +1163,7 @@ $(function () {
                 try {
                     wolData = JSON.parse($(this).attr('data-wol-card'));
                 } catch (e) { return; }
-                var hostConfig = $.extend({}, wolData);
-                hostConfig['dataWol'] = JSON.stringify(wolData);
-                var tr = renderTemplate($('#tableRowTemplate').html(), hostConfig);
-                $tbody.append(tr);
+                $tbody.append(renderRow(wolData));
             });
             makeDirty();
         }
