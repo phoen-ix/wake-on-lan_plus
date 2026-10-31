@@ -96,6 +96,7 @@ Total: **111 items** (45 route × role cells + 66 feature/state rows): **108 ✅
 | import with **Overwrite existing configuration** | ✅ `config.spec.ts › import with "Overwrite existing configuration" replaces the page` |
 | import: broken JSON / not a list / `null` / host without MAC | ✅ `config.spec.ts › import of broken JSON: …`, `… of not a list: …`, `… of null: …`, `… of a host without MAC: …` |
 | **Load Configuration** dialog: Replace Existing / Append To Existing / Cancel | ✅ `config.spec.ts › load configuration › replace: …`, `… › append: …`, `… › cancel: nothing changes` |
+| choice dialog plugin: HTML in its `modal` option is never built | ✅ `config.spec.ts › load configuration › the dialog plugin never builds its modal option as HTML` |
 | **Save Configuration** (only while dirty) | ✅ `config.spec.ts › "Save Configuration" in the menu: only with unsaved changes, and it saves` |
 
 ## Settings panel and language (`settings.spec.ts`)

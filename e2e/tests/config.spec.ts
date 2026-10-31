@@ -105,6 +105,25 @@ test.describe('load configuration', () => {
     await expect(cards(page)).toHaveCount(HOSTS.length)
     await expect(page.locator('#saveBar')).not.toHaveClass(/is-visible/)
   })
+
+  // $.fn.bootstrapChoice looks its modal up as a selector: HTML in the option is an invalid
+  // selector, never built. The control image is built the old way and proves its onerror had
+  // time to run.
+  test('the dialog plugin never builds its modal option as HTML', async ({ page, baseURL }) => {
+    await open(page, baseURL)
+    await page.evaluate(() => {
+      const $ = (window as unknown as { jQuery: (s: string) => { bootstrapChoice(o: object): void } }).jQuery
+      try {
+        $('<button>').bootstrapChoice({ modal: '<img src="e2e-plugin-probe" onerror="window.__xss=1">' })
+      } catch {
+        // "Syntax error, unrecognized expression": not a selector.
+      }
+      $('<img src="e2e-control-probe" onerror="window.__control=1">')
+    })
+    const flag = (name: string) => page.evaluate((n) => (window as unknown as Record<string, unknown>)[n], name)
+    await expect.poll(() => flag('__control')).toBe(1)
+    expect(await flag('__xss')).toBeUndefined()
+  })
 })
 
 test('"Save Configuration" in the menu: only with unsaved changes, and it saves', async ({ page, baseURL, request }) => {

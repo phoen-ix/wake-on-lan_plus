@@ -296,7 +296,8 @@ $(function () {
             var
                 settings = $.extend({}, defaults, options)
                 , $this = $(this)
-                , $modal = $(settings.modal);
+                // find() takes a selector or an element, never HTML to build.
+                , $modal = $(document).find(settings.modal);
 
 
             if (!settings.modal) alert('No modal set (.modal == null). This is not allowed!');
