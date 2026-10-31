@@ -1090,6 +1090,14 @@ $(function () {
         $.fn.miniI18n(val);
     });
 
+    // The footer flags (mini-i18n switches the texts): stored like the setting.
+    $('[data-lang-switch]').on('click', function (event) {
+        event.preventDefault();
+        var val = $(this).attr('data-lang-switch');
+        WolSettings.set('language', val);
+        $('#settingLanguage').val(val);
+    });
+
 
     /* ============================================================
        Initialize Language Support
