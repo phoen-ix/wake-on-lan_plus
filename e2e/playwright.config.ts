@@ -19,6 +19,8 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? 'http://127.0.0.1:25500',
     locale: 'en-GB',
     timezoneId: 'Europe/Vienna',
+    // Bootstrap ignores a modal's Close while the modal is still fading in.
+    contextOptions: { reducedMotion: 'reduce' },
     actionTimeout: 15_000,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
