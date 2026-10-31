@@ -159,7 +159,9 @@ if ("CONFIG.GET" === $ajaxOperation) {
     if ($MESSAGE) {
         endWithErrorMessage($MESSAGE);
     } else {
-        endWithJsonResponse(["info" => "Magic packet has been sent for <strong>" . htmlspecialchars($mac, ENT_QUOTES, 'UTF-8') . "</strong>. Please wait for the host to come up...", "csrfToken" => $newToken]);
+        $responseData["info"] = "Magic packet has been sent for <strong>" . htmlspecialchars($mac, ENT_QUOTES, 'UTF-8') . "</strong>. Please wait for the host to come up...";
+        $responseData["csrfToken"] = $newToken;
+        endWithJsonResponse($responseData);
     }
 } else {
     if (isset($_GET["aop"])) {
