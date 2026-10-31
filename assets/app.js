@@ -1187,6 +1187,11 @@ $(function () {
             makeDirty();
         }
     });
+    // jQuery UI takes only float/inline items for side by side; in a CSS grid it
+    // would reorder on vertical moves only. Several columns are side by side.
+    $('#hostGrid').sortable('instance')._isFloating = function () {
+        return getComputedStyle(this.element[0]).gridTemplateColumns.split(' ').length > 1;
+    };
 
     $(window).on('beforeunload', function (event) {
         if (!unsavedChangesCount) return;
