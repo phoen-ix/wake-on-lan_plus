@@ -270,9 +270,13 @@ test.describe('page chrome', () => {
       const body = (await res.text()).replace('"isSocketExtensionLoaded":1', '"isSocketExtensionLoaded":0')
       await route.fulfill({ response: res, body })
     })
+    await page.clock.install()
     await open(page, baseURL)
     await expect(toast(page)).toContainText('Sockets extension not loaded! Enable it in php.ini to send magic packets.')
     await expect(toast(page)).toHaveClass(/toast-warning/)
+    // Longer than the default 5 s toast duration.
+    await page.clock.runFor(10_000)
+    await expect(toast(page)).toContainText('Sockets extension not loaded!')
   })
 
   test('the title reloads the page; the footer links to GitHub', async ({ page, baseURL }) => {

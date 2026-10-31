@@ -73,10 +73,9 @@ async function settle(page: Page, total: number) {
   const cards = page.locator('#hostGrid .wol-card')
   await expect(cards).toHaveCount(total)
   await expect(page.locator('#hostGrid .wol-card.is-checking')).toHaveCount(0, { timeout: 30_000 })
-  // The next tick reads 0 and stops; it comes at most one interval (plus one
-  // in-flight check) later.
+  // Every later tick reads 0 and returns before it marks a card: only a check
+  // already in flight can still be amber.
   await page.evaluate(() => (window as unknown as { WolSettings: { set(k: string, v: unknown): void } }).WolSettings.set('checkInterval', 0))
-  await page.waitForTimeout(2_500)
   await expect(page.locator('#hostGrid .wol-card.is-checking')).toHaveCount(0)
 }
 

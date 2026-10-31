@@ -143,6 +143,8 @@ test.describe('language', () => {
     await open(page, baseURL)
     await page.getByRole('link', { name: 'Deutsch' }).click()
     await expect(importLink(page)).toHaveText('Konfiguration importieren')
+    // The flags are href="#" links: the click must not follow them (jump to the top).
+    await expect(page).not.toHaveURL(/#/)
     let panel = await openSettings(page)
     await expect(panel.getByLabel('Display language')).toHaveValue('de-DE')
     await page.reload()
