@@ -811,17 +811,25 @@ $(function () {
         var jsonString = $('#importJson').val();
         var overwrite = $('#importJsonOverwriteExisting:checked').length;
         var config = [];
+        var importError = function (message) {
+            $('#importJsonErrorContainer').append(
+                '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                escHtml(String(message)) +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>'
+            );
+        };
 
         $('#importJsonErrorContainer').empty();
 
         try {
             config = JSON.parse(jsonString);
         } catch (err) {
-            $('#importJsonErrorContainer').append(
-                '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
-                err +
-                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>'
-            );
+            importError(err);
+            return;
+        }
+        // What CONFIG.SET accepts: a list of hosts, each with a mac and a host.
+        if (!Array.isArray(config) || config.some(function (h) { return !h || 'object' !== typeof h || null == h.mac || null == h.host; })) {
+            importError('Expected a list of hosts, each with "mac" and "host".');
             return;
         }
 
