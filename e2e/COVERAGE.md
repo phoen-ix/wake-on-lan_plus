@@ -65,6 +65,7 @@ Total: **111 items** (45 route × role cells + 66 feature/state rows): **108 ✅
 | save failure (429/500) → toast, bar stays | ✅ `api.spec.ts › CONFIG.SET › a save that fails in the page shows the reason in a toast` |
 | leave prompt (`beforeunload`) with / without unsaved changes | ✅ `… › leaving with unsaved changes asks first`, `… › leaving without changes does not ask` |
 | comment with `'` and HTML: shown as text, wake/save work, no script | ✅ `hosts.spec.ts › odd input › a comment with an apostrophe and HTML: …` |
+| comment with `\`, `"`, `{{…}}` and `$&`: table row and save keep it verbatim | ✅ `hosts.spec.ts › odd input › a comment with backslashes, quotes and template braces: …` |
 | toast close button | ✅ `hosts.spec.ts › page chrome › a toast closes with its close button` |
 | sockets-missing warning toast | ✅ `hosts.spec.ts › page chrome › without the sockets extension the page warns, and the warning stays` (page HTML rewritten: the image always has sockets) |
 | title link (reload), GitHub footer link | ✅ `hosts.spec.ts › page chrome › the title reloads the page; the footer links to GitHub` (href only: GitHub is external) |

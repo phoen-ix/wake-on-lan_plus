@@ -252,6 +252,18 @@ test.describe('odd input', () => {
     expect(await savedConfig(request)).toEqual(plain([odd]))
     expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined()
   })
+
+  // The hidden table row (the source of truth) comes from a template: its values go in verbatim.
+  test('a comment with backslashes, quotes and template braces: shown and saved unchanged', async ({ page, baseURL, request }) => {
+    const odd = { ...HOSTS[0], comment: String.raw`C:\share\"wol" {{this.mac}} $& \u0041` }
+    await open(page, baseURL, { hosts: [odd, HOSTS[1]] })
+    await expect(card(page, 'share').locator('.wol-card__name')).toHaveText(odd.comment)
+    await expect(page.locator('#hostTable tbody tr').first().locator('td').nth(5)).toHaveText(odd.comment)
+    await card(page, 'NAS (backups)').getByRole('button', { name: 'Delete' }).click()
+    await expect(cards(page)).toHaveCount(1)
+    await save(page)
+    expect(await savedConfig(request)).toEqual(plain([odd]))
+  })
 })
 
 test.describe('page chrome', () => {

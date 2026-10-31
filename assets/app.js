@@ -459,50 +459,12 @@ $(function () {
             showToast(message, style, autoClose || WolSettings.get('toastDuration'));
         }
 
-        , renderTemplate = function (html, data, rowCallback) {
-            var
-                re = /\{\{([\s\S]+?(}?)+)}}/g,
-                reExp = /(^( )?(var|if|for|else|switch|case|break|{|}|;))(.*)?/g,
-                code = 'with(obj) { var r=[];\n',
-                cursor = 0,
-                result = [],
-                match
-            ;
-
-            var
-                isArray = function (o) {
-                    return ('[object Array]' === Object.prototype.toString.call(o));
-                },
-                add = function (line, js) {
-                    js ?
-                        (code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n') :
-                        (code += line !== '' ?
-                                'r.push("' + line.replace(/"/g, '\\"') + '");\n' :
-                                ''
-                        );
-                    return add;
-                };
-
-            while ((match = re.exec(html))) {
-                add(html.slice(cursor, match.index))(match[1], true);
-                cursor = match.index + match[0].length;
-            }
-            add(html.substr(cursor, html.length - cursor));
-            code = (code + 'return r.join(""); }').replace(/[\r\t\n]/g, ' ');
-            try {
-                if (!isArray(data)) data = [data];
-                for (var i = 0; i < data.length; i++) {
-
-                    var
-                        item = JSON.parse(JSON.stringify(data[i])),
-                        ignore = rowCallback && rowCallback.apply(null, [item, i])
-                    ;
-                    if (!ignore) result.push(new Function('obj', code).apply(item, [item]));
-                }
-            } catch (err) {
-                console && console.error("'" + err.message + "'");
-            }
-            return result;
+        /* Fills the {{this.key}} placeholders of a template with data[key], as is:
+         * the caller escapes the values (renderRow). */
+        , renderTemplate = function (html, data) {
+            return html.replace(/\{\{this\.(\w+)}}/g, function (m, key) {
+                return data[key];
+            });
         }
 
         , unsavedChangesCount = 0
