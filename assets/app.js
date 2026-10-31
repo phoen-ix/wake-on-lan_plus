@@ -425,10 +425,10 @@ $(function () {
             };
 
             var $toast = $([
-                '<div class="wol-toast toast-' + style + '">',
-                '  <i class="fas ' + (iconMap[style] || iconMap.info) + ' wol-toast__icon"></i>',
+                '<div class="wol-toast toast-' + style + '" role="' + (style === 'danger' || style === 'warning' ? 'alert' : 'status') + '">',
+                '  <i aria-hidden="true" class="fas ' + (iconMap[style] || iconMap.info) + ' wol-toast__icon"></i>',
                 '  <div class="wol-toast__body">' + message + '</div>',
-                '  <button class="wol-toast__close"><i class="fas fa-times"></i></button>',
+                '  <button class="wol-toast__close" aria-label="Close"><i aria-hidden="true" class="fas fa-times"></i></button>',
                 '</div>'
             ].join(''));
 
@@ -547,8 +547,8 @@ $(function () {
                 '      <div class="wol-card__port-info"></div>',
                 '    </div>',
                 '    <div class="wol-card__actions">',
-                '      <button class="wol-card-btn btn-wake btnWakeUpHost" title="Wake"><i class="fas fa-power-off"></i></button>',
-                '      <button class="wol-card-btn btn-delete btnRemoveHost" title="Delete"><i class="fas fa-trash-alt"></i></button>',
+                '      <button class="wol-card-btn btn-wake btnWakeUpHost" title="Wake"><i aria-hidden="true" class="fas fa-power-off"></i></button>',
+                '      <button class="wol-card-btn btn-delete btnRemoveHost" title="Delete"><i aria-hidden="true" class="fas fa-trash-alt"></i></button>',
                 '    </div>',
                 '  </div>',
                 '  <div class="wol-card__meta">',

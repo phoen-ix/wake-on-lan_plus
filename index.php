@@ -193,7 +193,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
     <header class="wol-header">
         <a href="" class="wol-header__brand">
             <div class="wol-header__icon">
-                <i class="fas fa-broadcast-tower"></i>
+                <i aria-hidden="true" class="fas fa-broadcast-tower"></i>
             </div>
             <span class="wol-header__title" data-lang-ckey="title">Wake On Lan</span>
         </a>
@@ -216,21 +216,21 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
             <!-- Options Dropdown -->
             <div class="dropdown">
                 <button class="wol-icon-btn" id="dropdownOptions" data-bs-toggle="dropdown" aria-expanded="false" title="Options">
-                    <i class="fas fa-ellipsis-v"></i>
+                    <i aria-hidden="true" class="fas fa-ellipsis-v"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownOptions">
-                    <li><a id="downloadConfig" class="dropdown-item" href="?aop=CONFIG.DOWNLOAD"><i class="fa fa-file-csv"></i> <span data-lang-ckey="download_config">Download Configuration</span></a></li>
-                    <li><a id="exportConfig" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#exportModal" href="#"><i class="fa fa-file-export"></i> <span data-lang-ckey="export_config">Export Configuration</span></a></li>
-                    <li><a id="importConfig" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importModal" href="#"><i class="fa fa-file-import"></i> <span data-lang-ckey="import_config">Import Configuration</span></a></li>
+                    <li><a id="downloadConfig" class="dropdown-item" href="?aop=CONFIG.DOWNLOAD"><i aria-hidden="true" class="fa fa-file-csv"></i> <span data-lang-ckey="download_config">Download Configuration</span></a></li>
+                    <li><a id="exportConfig" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#exportModal" href="#"><i aria-hidden="true" class="fa fa-file-export"></i> <span data-lang-ckey="export_config">Export Configuration</span></a></li>
+                    <li><a id="importConfig" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importModal" href="#"><i aria-hidden="true" class="fa fa-file-import"></i> <span data-lang-ckey="import_config">Import Configuration</span></a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a id="loadConfigFromServer" class="dropdown-item" href="#"><i class="fa fa-folder-open"></i> <span data-lang-ckey="load_config">Load Configuration</span></a></li>
-                    <li style="display: none;"><a id="saveConfigToServer" class="dropdown-item" href="#"><i class="fa fa-save"></i> <span data-lang-ckey="save_config">Save Configuration</span></a></li>
+                    <li><a id="loadConfigFromServer" class="dropdown-item" href="#"><i aria-hidden="true" class="fa fa-folder-open"></i> <span data-lang-ckey="load_config">Load Configuration</span></a></li>
+                    <li style="display: none;"><a id="saveConfigToServer" class="dropdown-item" href="#"><i aria-hidden="true" class="fa fa-save"></i> <span data-lang-ckey="save_config">Save Configuration</span></a></li>
                 </ul>
             </div>
 
             <!-- Settings Button -->
             <button class="wol-icon-btn" id="openSettings" title="Settings">
-                <i class="fas fa-cog"></i>
+                <i aria-hidden="true" class="fas fa-cog"></i>
             </button>
         </div>
     </header>
@@ -243,7 +243,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 
     <!-- Empty state (shown when no hosts) -->
     <div id="emptyState" class="wol-empty" style="display: none;">
-        <div class="wol-empty__icon"><i class="fas fa-network-wired"></i></div>
+        <div class="wol-empty__icon"><i aria-hidden="true" class="fas fa-network-wired"></i></div>
         <div class="wol-empty__title">No hosts configured</div>
         <div class="wol-empty__text">Add your first network device to start sending magic packets.</div>
     </div>
@@ -258,25 +258,25 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 
 <!-- ========== FLOATING ADD BUTTON ========== -->
 <button class="wol-fab" id="fabAddHost" title="Add Host">
-    <i class="fas fa-plus"></i>
+    <i aria-hidden="true" class="fas fa-plus"></i>
 </button>
 
 <!-- ========== SAVE / CANCEL BAR ========== -->
 <div class="wol-save-bar" id="saveBar">
     <span class="wol-save-bar__label">Unsaved changes</span>
-    <button id="cancelButton" class="wol-btn wol-btn-danger"><i class="fas fa-times"></i> Cancel</button>
-    <button id="saveButton" class="wol-btn wol-btn-success"><i class="fas fa-check"></i> Save</button>
+    <button id="cancelButton" class="wol-btn wol-btn-danger"><i aria-hidden="true" class="fas fa-times"></i> Cancel</button>
+    <button id="saveButton" class="wol-btn wol-btn-success"><i aria-hidden="true" class="fas fa-check"></i> Save</button>
 </div>
 
 <!-- ========== TOAST CONTAINER ========== -->
-<div id="toastContainer"></div>
+<div id="toastContainer" aria-live="polite"></div>
 
 <!-- ========== SETTINGS PANEL ========== -->
 <div class="wol-settings-overlay" id="settingsOverlay"></div>
 <div class="wol-settings-panel" id="settingsPanel">
     <div class="wol-settings__header">
         <span class="wol-settings__title">Settings</span>
-        <button class="wol-settings__close" id="closeSettings"><i class="fas fa-times"></i></button>
+        <button class="wol-settings__close" id="closeSettings" aria-label="Close"><i aria-hidden="true" class="fas fa-times"></i></button>
     </div>
     <div class="wol-settings__body">
 
@@ -286,7 +286,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
                 <div>
                     <div class="wol-setting__label">Theme</div>
                 </div>
-                <select class="wol-settings-select" id="settingTheme">
+                <select class="wol-settings-select" id="settingTheme" aria-label="Theme">
                     <option value="dark">Dark</option>
                     <option value="light">Light</option>
                     <option value="auto">Auto</option>
@@ -298,7 +298,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
                     <div class="wol-setting__desc">Show hosts as a list</div>
                 </div>
                 <label class="wol-toggle">
-                    <input type="checkbox" id="settingCompact">
+                    <input type="checkbox" id="settingCompact" aria-label="Compact view">
                     <span class="wol-toggle__track"></span>
                 </label>
             </div>
@@ -311,7 +311,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
                     <div class="wol-setting__label">Check interval</div>
                     <div class="wol-setting__desc">How often to poll host status</div>
                 </div>
-                <select class="wol-settings-select" id="settingInterval">
+                <select class="wol-settings-select" id="settingInterval" aria-label="Check interval">
                     <option value="1000">1s</option>
                     <option value="2000" selected>2s</option>
                     <option value="5000">5s</option>
@@ -326,7 +326,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
                     <div class="wol-setting__desc">Load config on page open</div>
                 </div>
                 <label class="wol-toggle">
-                    <input type="checkbox" id="settingAutoRefresh" checked>
+                    <input type="checkbox" id="settingAutoRefresh" aria-label="Auto-refresh" checked>
                     <span class="wol-toggle__track"></span>
                 </label>
             </div>
@@ -336,11 +336,11 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
             <div class="wol-settings-section__title">Defaults</div>
             <div class="wol-setting-row">
                 <div><div class="wol-setting__label">Default port</div></div>
-                <input type="number" class="form-control wol-settings-input" id="settingDefaultPort" value="9" min="1" max="65535">
+                <input type="number" class="form-control wol-settings-input" id="settingDefaultPort" aria-label="Default port" value="9" min="1" max="65535">
             </div>
             <div class="wol-setting-row">
                 <div><div class="wol-setting__label">Default CIDR</div></div>
-                <input type="number" class="form-control wol-settings-input" id="settingDefaultCidr" value="24" min="0" max="32">
+                <input type="number" class="form-control wol-settings-input" id="settingDefaultCidr" aria-label="Default CIDR" value="24" min="0" max="32">
             </div>
         </div>
 
@@ -350,7 +350,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
                 <div>
                     <div class="wol-setting__label">Toast duration</div>
                 </div>
-                <select class="wol-settings-select" id="settingToastDuration">
+                <select class="wol-settings-select" id="settingToastDuration" aria-label="Toast duration">
                     <option value="3000">3 seconds</option>
                     <option value="5000" selected>5 seconds</option>
                     <option value="10000">10 seconds</option>
@@ -363,7 +363,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
             <div class="wol-settings-section__title">Language</div>
             <div class="wol-setting-row">
                 <div><div class="wol-setting__label">Display language</div></div>
-                <select class="wol-settings-select" id="settingLanguage">
+                <select class="wol-settings-select" id="settingLanguage" aria-label="Display language">
                     <option value="en-US">English</option>
                     <option value="de-DE">Deutsch</option>
                     <option value="es-ES">Espa&ntilde;ol</option>
@@ -468,7 +468,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addHostModalLabel"><i class="fas fa-plus" style="margin-right:8px; color:var(--wol-accent);"></i>Add Host</h5>
+                <h5 class="modal-title" id="addHostModalLabel"><i aria-hidden="true" class="fas fa-plus" style="margin-right:8px; color:var(--wol-accent);"></i>Add Host</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -497,7 +497,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
             </div>
             <div class="modal-footer">
                 <button type="button" class="wol-btn wol-btn-ghost" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" id="addHost" class="wol-btn wol-btn-primary"><i class="fas fa-plus"></i> Add Host</button>
+                <button type="button" id="addHost" class="wol-btn wol-btn-primary"><i aria-hidden="true" class="fas fa-plus"></i> Add Host</button>
             </div>
         </div>
     </div>
@@ -507,7 +507,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 <!-- ========== TEMPLATES ========== -->
 <script id="tableRowTemplate" type="text/template">
     <tr data-wol='{{this.dataWol}}'>
-        <td class="align-middle"><i class="fa fa-question"></i></td>
+        <td class="align-middle"><i aria-hidden="true" class="fa fa-question"></i></td>
         <td class="align-middle">{{this.mac}}</td>
         <td class="align-middle">{{this.host}}</td>
         <td class="align-middle">{{this.cidr}}</td>
@@ -515,8 +515,8 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
         <td class="align-middle">{{this.comment}}</td>
         <td class="align-middle">
             <div class="d-flex flex-row justify-content-end">
-                <button type="button" class="btnWakeUpHost btn btn-outline-success btn-sm mx-1"><i class="fa fa-rocket"></i></button>
-                <button type="button" class="btnRemoveHost btn btn-outline-danger btn-sm mx-1"><i class="fa fa-trash-alt"></i></button>
+                <button type="button" class="btnWakeUpHost btn btn-outline-success btn-sm mx-1"><i aria-hidden="true" class="fa fa-rocket"></i></button>
+                <button type="button" class="btnRemoveHost btn btn-outline-danger btn-sm mx-1"><i aria-hidden="true" class="fa fa-trash-alt"></i></button>
             </div>
         </td>
     </tr>
