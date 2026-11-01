@@ -7,52 +7,15 @@ Docker or on any PHP web server.
 
 <img src="docs/screenshots/hosts-grid.png" alt="Host grid: six host cards, four online with their open port, two offline" width="800">
 
+**Status:** maintained; CI publishes the image on GHCR for `linux/amd64` and `linux/arm64` (see [Image](#image)).
+
 Forked from [AndiSHFR/wake-on-lan.php](https://github.com/andishfr/wake-on-lan.php), maintained by [phoen-ix](https://github.com/phoen-ix/wake-on-lan_plus).
-This is a security-hardened, modular rewrite of the 2024 release. The image is
-published on GHCR (see [Image](#image)). **Every screen: [the screenshot gallery](docs/screenshots/README.md).**
+This is a security-hardened, modular rewrite of the 2024 release.
 
-## Features
+**Every screen: [the screenshot gallery](docs/screenshots/README.md).** The host grid
+[in the light theme](docs/screenshots/hosts-grid.light.png) and [on a phone](docs/screenshots/hosts-grid.mobile.png).
 
-  * **Host cards** in a responsive grid, with a pulsing green dot for online hosts, red
-    for offline and amber while a check runs. The header shows "X online / Y total".
-  * **Status checks** on ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS) and 5938
-    (TeamViewer). The card shows the first port that answers.
-  * **Add Host dialog** behind the floating **+** button. It validates MAC, CIDR and port,
-    and pre-fills CIDR and port from Settings.
-  * **Drag-and-drop reordering** of the cards (jQuery UI sortable).
-  * **Floating save bar** while there are unsaved changes.
-  * **Themes:** Dark (default), Light and Auto. Plus a compact list view.
-  * **Settings panel**, stored per browser in `localStorage`.
-  * **Toast notifications.**
-  * **Import/export** of the configuration as JSON, and a download of the saved
-    `config.json`.
-
-<img src="docs/screenshots/hosts-add.png" alt="Add Host dialog with MAC, IP, CIDR, port and comment" width="800">
-
-### Security
-
-  * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via the `X-CSRF-TOKEN` header.
-  * **CSRF token rotation:** a new token after every successful state-changing operation. It comes back in the JSON response and the JavaScript client picks it up.
-  * **Session-based rate limiting** per action, configurable via environment variables (see below).
-  * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD`.
-  * **SSRF prevention:** an allowlist on the HOST.CHECK `host` parameter (letters, digits, dots, hyphens and colons only; at most 253 characters).
-  * **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`.
-  * **Config outside the web root:** the image keeps `config.json` and its backups in `/data` (`WOL_CONFIG_DIR`).
-  * **`.htaccess` protections:** they block direct web access to `config.json` (and its temp files and backups, for installs that keep it next to `index.php`), `includes/` and the old monolith file.
-  * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials.
-  * **JSON structure validation** on configuration saves.
-  * **Atomic config file writes:** a temp file plus `rename()`.
-  * **Anchored MAC address validation:** the regex is anchored with `^`/`$`.
-  * HOST.WAKEUP is a POST.
-
-### Docker
-
-  * **Image on GHCR:** `ghcr.io/phoen-ix/wake-on-lan_plus`, built by CI for `linux/amd64` and `linux/arm64` after the tests pass.
-  * Built on the official PHP Apache image (the tag is pinned in [`Dockerfile`](Dockerfile)), with the `sockets` extension.
-  * **HEALTHCHECK:** checks every 30 seconds that Apache responds.
-  * **Config backup:** on every container start, the entrypoint copies `config.json` to `/data/config_backups/` and keeps the last 5 copies.
-
----
+**Contents:** [Quick Start](#quick-start-docker-compose) · [Features](#features) · [Bare Metal](#requirements-bare-metal) · [Usage](#usage) · [Configuration Format](#configuration-format) · [Languages](#internationalization) · [Project Structure](#project-structure) · [Screenshots](#screenshots) · [E2E tests](#e2e-tests) · [License](#license)
 
 ## Quick Start (Docker Compose)
 
@@ -77,9 +40,9 @@ docker network create -d macvlan \
 docker compose up -d
 ```
 
-6. Open `http://<ipv4_address>/` from another device on the LAN. On a macvlan network the
-   `ports:` mapping (`HOST_PORT`) does not apply. Also, the Docker host itself cannot reach
-   its own macvlan containers.
+6. Open `http://<ipv4_address>/` from another device on the LAN.
+   - On a macvlan network the `ports:` mapping (`HOST_PORT`) does not apply.
+   - The Docker host itself cannot reach its own macvlan containers.
 
 `docker-compose.yml` runs the image's own app code and mounts `./volume/config/` at
 `/data`. That is where `config.json` and `config_backups/` end up, outside the web root.
@@ -91,9 +54,10 @@ Older versions of `docker-compose.yml` mounted `./volume/config/` over the web r
 layout:
 
 1. Update the checkout and keep your `ipv4_address` edit:
-   `git stash && git pull && git stash pop`. Without git, replace the `volumes:` block by
-   hand. Either way, `volumes:` must then hold only `- ./volume/config/:/data`: the new
-   image reads, writes and backs up the config only in `/data`.
+   - with git: `git stash && git pull && git stash pop`
+   - without git: replace the `volumes:` block by hand
+   - either way, `volumes:` must then hold only `- ./volume/config/:/data`: the new
+     image reads, writes and backs up the config only in `/data`.
 2. `docker compose pull && docker compose up -d`. The same `./volume/config/` is now
    mounted at `/data`, so your hosts and backups stay where they are.
 3. Docker may have left empty `index.php`, `includes/` and `assets/` mount points in
@@ -125,6 +89,9 @@ To build the image yourself instead: `docker build -t wake-on-lan_plus .` and se
 
 ### Optional: Enable Authentication
 
+> ⚠️ Authentication is off by default, also in the shipped `docker-compose.yml`. Without it,
+> anyone who can reach the page can read and change the host list and wake hosts.
+
 Set credentials in your `.env` file or directly in `docker-compose.yml`:
 
 ```env
@@ -152,6 +119,55 @@ such pages. Checks over the limit fail, and those hosts show as offline.
 
 ---
 
+## Features
+
+  * **Host cards** in a responsive grid, with a pulsing green dot for online hosts, red
+    for offline and amber while a check runs. The header shows "X online / Y total".
+  * **Status checks** on ports 3389 (RDP), 22 (SSH), 80 (HTTP), 443 (HTTPS) and 5938
+    (TeamViewer). The card shows the first port that answers.
+  * **Add Host dialog** behind the floating **+** button. It validates MAC, CIDR and port,
+    and pre-fills CIDR and port from Settings.
+  * **Drag-and-drop reordering** of the cards (jQuery UI sortable).
+  * **Floating save bar** while there are unsaved changes.
+  * **Themes:** Dark (default), Light and Auto. Plus a compact list view.
+  * **Settings panel**, stored per browser in `localStorage`.
+  * **Toast notifications**, announced to screen readers. The icon buttons and settings
+    controls have accessible names.
+  * **Import/export** of the configuration as JSON, and a download of the saved
+    `config.json`.
+  * **Debug trace:** open the page with `?debug=1` and every wake request returns the
+    step-by-step trace (MAC check, broadcast address, socket calls) as `DEBUG` in its JSON
+    response.
+
+<img src="docs/screenshots/hosts-add.png" alt="Add Host dialog with MAC, IP, CIDR, port and comment" width="800">
+
+### Security
+
+  * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via the `X-CSRF-TOKEN` header.
+  * **CSRF token rotation:** a new token after every successful state-changing operation. It comes back in the JSON response and the JavaScript client picks it up.
+  * **Session-based rate limiting** per action, configurable via environment variables (see [Configure Rate Limits](#optional-configure-rate-limits)).
+  * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD`.
+  * **SSRF prevention:** an allowlist on the HOST.CHECK `host` parameter (letters, digits, dots, hyphens and colons only; at most 253 characters).
+  * **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`.
+  * **Config outside the web root:** the image keeps `config.json` and its backups in `/data` (`WOL_CONFIG_DIR`).
+  * **`.htaccess` protections:** they block direct web access to `config.json` (and its temp files and backups, for installs that keep it next to `index.php`), `includes/` and the old monolith file.
+  * **Escaped host values:** quotes and HTML in a comment or other host field show as text and never run.
+  * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials.
+  * **JSON structure validation** on configuration saves and imports.
+  * **Atomic config file writes:** a temp file plus `rename()`.
+  * **Anchored MAC address validation:** the regex is anchored with `^`/`$`.
+  * HOST.WAKEUP is a POST.
+
+### Docker
+
+  * **Image on GHCR:** `ghcr.io/phoen-ix/wake-on-lan_plus`, built by CI for `linux/amd64` and `linux/arm64` after the tests pass.
+  * Built on the official PHP Apache image (the tag is pinned in [`Dockerfile`](Dockerfile)), with the `sockets` extension.
+  * **Production `php.ini`:** PHP warnings go to the log (`docker logs`), never into a response.
+  * **HEALTHCHECK:** checks every 30 seconds that Apache responds.
+  * **Config backup:** on every container start, the entrypoint copies `config.json` to `/data/config_backups/` and keeps the last 5 copies.
+
+---
+
 ## Requirements (Bare Metal)
 
   * PHP 8.x with the `sockets` and `mbstring` extensions enabled
@@ -175,35 +191,6 @@ such pages. Checks over the limit fail, and those hosts show as offline.
   * Find the line `;extension=sockets`
   * Remove the leading semicolon (`;`) to enable it
   * Reload your web server
-
----
-
-## Project Structure
-
-```
-index.php                  Main entry point (AJAX routing + HTML UI)
-includes/
-  auth.php                 Authentication, CSRF tokens & token rotation
-  functions.php            Core WoL functions & utilities
-  .htaccess                Blocks direct web access to includes/
-assets/
-  app.js                   Client-side JavaScript application
-  style.css                CSS styles (dark and light themes)
-tests/
-  test_functions.php       Unit tests (run: php tests/test_functions.php)
-e2e/                       Playwright (own Node package): e2e suite (tests/) + docs tour (docs/)
-scripts/e2e.sh             Builds the image, runs it twice, runs the e2e suite
-scripts/docs-screenshots.sh  Builds the image, runs the tour, writes docs/screenshots/
-docs/screenshots/          Screenshots + gallery (README.md)
-Dockerfile                 Docker image definition (with HEALTHCHECK)
-docker-compose.yml         Docker Compose orchestration (pulls the GHCR image)
-entrypoint.sh              Docker entrypoint script (config dir + backup)
-example.env                Environment variable template
-.htaccess                  Protects config.json and the legacy file
-wake-on-lan_plus.php       The original single-file app (legacy; not in the image, blocked by .htaccess)
-IMPROVEMENTS.md            Future improvements roadmap
-HANDOVER.md                Developer handover document
-```
 
 ---
 
@@ -265,7 +252,7 @@ Click the gear icon in the header to open the settings sidebar. All settings are
 |---|---|
 | Download Configuration | Downloads the configuration saved on the server as `wake-on-lan-<date>-<time>.json` |
 | Export Configuration | Shows the configuration on the page as JSON, for manual copy |
-| Import Configuration | Paste JSON to append hosts, or replace them with **Overwrite existing configuration** |
+| Import Configuration | Paste JSON to append hosts, or replace them with **Overwrite existing configuration**. Anything but a list of hosts with `mac` and `host` is refused |
 | Load Configuration | Reloads the configuration from the server, replacing or appending to the page's hosts |
 | Save Configuration | Saves the page's configuration to the server (only shown while there are unsaved changes) |
 
@@ -315,6 +302,35 @@ and the Add Host form labels only; the rest of the page stays in English.
 
 ---
 
+## Project Structure
+
+```
+index.php                  Main entry point (AJAX routing + HTML UI)
+includes/
+  auth.php                 Authentication, CSRF tokens & token rotation
+  functions.php            Core WoL functions & utilities
+  .htaccess                Blocks direct web access to includes/
+assets/
+  app.js                   Client-side JavaScript application
+  style.css                CSS styles (dark and light themes)
+tests/
+  test_functions.php       Unit tests (run: php tests/test_functions.php)
+e2e/                       Playwright (own Node package): e2e suite (tests/) + docs tour (docs/)
+scripts/e2e.sh             Builds the image, runs it twice, runs the e2e suite
+scripts/docs-screenshots.sh  Builds the image, runs the tour, writes docs/screenshots/
+docs/screenshots/          Screenshots + gallery (README.md)
+Dockerfile                 Docker image definition (with HEALTHCHECK)
+docker-compose.yml         Docker Compose orchestration (pulls the GHCR image)
+entrypoint.sh              Docker entrypoint script (config dir + backup)
+example.env                Environment variable template
+.htaccess                  Protects config.json and the legacy file
+wake-on-lan_plus.php       The original single-file app (legacy; not in the image, blocked by .htaccess)
+IMPROVEMENTS.md            Future improvements roadmap
+HANDOVER.md                Developer handover document
+```
+
+---
+
 ## Screenshots
 
 [`docs/screenshots/`](docs/screenshots/README.md) holds one screenshot per screen, made by the
@@ -327,12 +343,12 @@ and Node needed):
 scripts/docs-screenshots.sh            # default output: docs/screenshots/
 ```
 
-It builds the image, runs it as the container `wake-on-lan_plus_docs` on
-`127.0.0.1:${PORT_BASE:-25500}`, seeds it through the app's API, runs the tour, and
-removes the container and the image again. CI runs the same tour as a render check
-(`docs-tour` in `ci.yml`). The **Docs screenshots** workflow (manual) uploads the PNGs as
-an artifact to commit from. Optimise new PNGs with `oxipng -o 4 --strip safe` before
-committing.
+  * **What the script does:** builds the image, runs it as the container `wake-on-lan_plus_docs`
+    on `127.0.0.1:${PORT_BASE:-25500}`, seeds it through the app's API, runs the tour, and
+    removes the container and the image again.
+  * **CI:** runs the same tour as a render check (`docs-tour` in `ci.yml`). The **Docs
+    screenshots** workflow (manual) uploads the PNGs as an artifact to commit from.
+  * **New PNGs:** optimise them with `oxipng -o 4 --strip safe` before committing.
 
 ## E2E tests
 
@@ -345,9 +361,12 @@ states and limits, and Basic Auth. [`e2e/COVERAGE.md`](e2e/COVERAGE.md) maps eac
 scripts/e2e.sh                         # extra arguments go to Playwright, e.g. -g import
 ```
 
-It builds the image and runs it twice on the default bridge: `wake-on-lan_plus_e2e` on
-`127.0.0.1:${PORT_BASE:-25500}`, and `wake-on-lan_plus_e2e-auth` with Basic Auth on the next port.
-Both containers and the image are removed at the end. CI runs it as the `e2e` job in `ci.yml`.
+  * **Containers:** it builds the image and runs it twice on the default bridge:
+    `wake-on-lan_plus_e2e` on `127.0.0.1:${PORT_BASE:-25500}`, and `wake-on-lan_plus_e2e-auth`
+    with Basic Auth on the next port. Both containers and the image are removed at the end.
+  * **Magic packet:** a UDP sink inside the container checks the bytes a wake sends
+    (6 × `FF`, then the MAC 16 times).
+  * **CI:** the `e2e` job in `ci.yml`.
 
 ---
 
