@@ -46,6 +46,9 @@
   `PORT_BASE+1`. One Playwright worker: every test replaces the single `config.json`. A few
   tests `docker exec` into the open container (`E2E_CONTAINER`): broken config, entrypoint backups,
   the UDP sink that checks the magic packet.
+- Rate limits count per client IP in `/tmp/wol-rate-limit.json` (`checkRateLimit`), and every
+  test request comes from the same IP: the e2e `guard` fixture deletes the file in both
+  containers before each test, the docs tour runs with `WOL_RATE_LIMIT_CONFIG_SET=1000`.
 - Regression tests for app fixes go into the e2e suite (`e2e/tests/`, CI `e2e`); the docs
   tour keeps its older ones at the end of `e2e/docs/tour.spec.ts`.
 - Commit style: plain imperative subject, no prefix. End with the Co-Authored-By trailer

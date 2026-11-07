@@ -19,17 +19,19 @@ export const AUTH = {
   password: 'e2e-password-not-secret',
 }
 
+const CONTAINER = process.env.E2E_CONTAINER ?? 'wake-on-lan_plus_e2e'
+
 /** `docker exec` into the open container (scripts/e2e.sh sets E2E_CONTAINER). */
-export function inContainer(script: string): string {
-  return execFileSync('docker', ['exec', process.env.E2E_CONTAINER ?? 'wake-on-lan_plus_e2e', 'sh', '-c', script], {
-    encoding: 'utf8',
-  })
+export function inContainer(script: string, container = CONTAINER): string {
+  return execFileSync('docker', ['exec', container, 'sh', '-c', script], { encoding: 'utf8' })
 }
 
 export const test = base.extend<{ guard: void }>({
   // Every test: no page error, nothing fetched from outside the app.
   guard: [
     async ({ page, baseURL }, use) => {
+      // The rate limits count per client IP, and every test comes from the same one: start at zero.
+      for (const c of [CONTAINER, `${CONTAINER}-auth`]) inContainer('rm -f /tmp/wol-rate-limit.json', c)
       const errors: string[] = []
       const leaked: string[] = []
       page.on('pageerror', (e) => errors.push(e.message))
@@ -59,7 +61,7 @@ export async function open(
   await expect(page.locator('#statTotal')).toHaveText(String(hosts.length))
 }
 
-/** A fresh session (own cookie, own rate-limit counters) with the page's CSRF token. */
+/** A fresh session (own cookie) with the page's CSRF token. */
 export async function session(baseURL: string, opts: Parameters<typeof request.newContext>[0] = {}) {
   const api = await request.newContext({ baseURL, ...opts })
   const html = await (await api.get('/')).text()

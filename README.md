@@ -103,7 +103,8 @@ Leave both empty to disable authentication.
 
 ### Optional: Configure Rate Limits
 
-The limits count requests per browser session. Set them in `.env`;
+The limits count requests per client IP address (behind a reverse proxy, every client
+shares the proxy's address). Set them in `.env`;
 `docker-compose.yml` passes them through, and empty means the default:
 
 ```env
@@ -114,8 +115,8 @@ WOL_RATE_LIMIT_WINDOW_SECS=60      # Rate limit window in seconds (default: 60)
 ```
 
 The page checks one host per tick of the check interval: at 1s, up to 60 checks a minute
-per open page (the pages of one browser share a session). The default of 120 covers two
-such pages. Checks over the limit fail, and those hosts show as offline.
+per open page (every page from one IP address counts against the same limit). The
+default of 120 covers two such pages. Checks over the limit fail, and those hosts show as offline.
 
 ---
 
@@ -146,7 +147,7 @@ such pages. Checks over the limit fail, and those hosts show as offline.
 
   * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via the `X-CSRF-TOKEN` header.
   * **CSRF token rotation:** a new token after every successful state-changing operation. It comes back in the JSON response and the JavaScript client picks it up.
-  * **Session-based rate limiting** per action, configurable via environment variables (see [Configure Rate Limits](#optional-configure-rate-limits)).
+  * **Rate limiting per client IP** and action (a client without a session cookie still counts), configurable via environment variables (see [Configure Rate Limits](#optional-configure-rate-limits)).
   * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD`.
   * **SSRF prevention:** HOST.CHECK only checks hosts of the saved configuration (a host added on the page shows offline until it is saved), and the `host` parameter allows letters, digits, dots, hyphens and colons only (at most 253 characters).
   * **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`.

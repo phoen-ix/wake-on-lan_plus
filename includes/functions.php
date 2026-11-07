@@ -212,7 +212,8 @@ function endWithJsonResponse($responseData, $filename = null)
 }
 
 /**
- * Session-based rate limiting.
+ * Rate limiting per client IP (sliding window), in one JSON file in the temp
+ * directory under flock: a client that drops its session cookie still counts.
  *
  * @param string $action     The action identifier
  * @param int    $maxRequests Maximum requests allowed in the window
@@ -221,22 +222,28 @@ function endWithJsonResponse($responseData, $filename = null)
  */
 function checkRateLimit($action, $maxRequests, $windowSecs)
 {
-    $key = 'rate_limit_' . $action;
+    $fp = fopen(sys_get_temp_dir() . '/wol-rate-limit.json', 'c+');
+    if (!$fp) {
+        error_log('wake-on-lan_plus: cannot open the rate limit file, not limiting');
+        return true;
+    }
+    flock($fp, LOCK_EX);
     $now = time();
-
-    if (!isset($_SESSION[$key])) {
-        $_SESSION[$key] = [];
+    $data = json_decode(stream_get_contents($fp), true) ?: [];
+    foreach ($data as $k => $stamps) {
+        $data[$k] = array_values(array_filter($stamps, fn($t) => $now - $t < $windowSecs));
+        if (!$data[$k]) {
+            unset($data[$k]);
+        }
     }
-
-    // Remove expired entries
-    $_SESSION[$key] = array_filter($_SESSION[$key], function ($timestamp) use ($now, $windowSecs) {
-        return ($now - $timestamp) < $windowSecs;
-    });
-
-    if (count($_SESSION[$key]) >= $maxRequests) {
-        return false;
+    $key = $action . ' ' . ($_SERVER['REMOTE_ADDR'] ?? '');
+    $allowed = count($data[$key] ?? []) < $maxRequests;
+    if ($allowed) {
+        $data[$key][] = $now;
     }
-
-    $_SESSION[$key][] = $now;
-    return true;
+    ftruncate($fp, 0);
+    rewind($fp);
+    fwrite($fp, json_encode($data));
+    fclose($fp);
+    return $allowed;
 }

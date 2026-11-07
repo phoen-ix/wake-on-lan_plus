@@ -1,3 +1,5 @@
+import { request } from '@playwright/test'
+
 import { AUTH, card, expect, HOSTS, inContainer, open, plain, seed, seedVia, session, test, toast } from './fixtures'
 
 /* The AJAX operations' error states and limits, the server-side config file,
@@ -98,12 +100,16 @@ test.describe('HOST.CHECK', () => {
     expect(await res.text()).toBe('Internal Server Error! Unknown host: only hosts of the saved configuration are checked.')
   })
 
-  test('the 121st check within a minute is refused (limit 120)', async ({ baseURL }) => {
+  test('the 121st check within a minute is refused (limit 120), also from a fresh session', async ({ baseURL }) => {
     await seed([LOCAL], baseURL!)
     const { api } = await session(baseURL!)
     for (let i = 1; i <= 120; i++) expect((await api.get(`${CHECK}&host=127.0.0.1`)).status(), `check ${i}`).toBe(200)
     expect((await api.get(`${CHECK}&host=127.0.0.1`)).status()).toBe(429)
     await api.dispose()
+    // The limit is per client IP: no cookie, no way around it.
+    const fresh = await request.newContext({ baseURL })
+    expect((await fresh.get(`${CHECK}&host=127.0.0.1`)).status()).toBe(429)
+    await fresh.dispose()
   })
 
   test('a reachable host: isUp with the open port', async ({ baseURL, request }) => {

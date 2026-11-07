@@ -109,22 +109,31 @@ assert_false(validateCsrfToken($oldToken), 'Old token no longer validates after 
 echo "\n=== checkRateLimit() ===\n";
 // ============================================================
 
-// Clear rate limit data
-foreach (array_keys($_SESSION) as $key) {
-    if (strpos($key, 'rate_limit_') === 0) unset($_SESSION[$key]);
-}
+$rateFile = sys_get_temp_dir() . '/wol-rate-limit.json';
+@unlink($rateFile);
+$_SERVER['REMOTE_ADDR'] = '192.0.2.1';
 
 assert_true(checkRateLimit('test_action', 3, 60), 'First request is allowed');
 assert_true(checkRateLimit('test_action', 3, 60), 'Second request is allowed');
 assert_true(checkRateLimit('test_action', 3, 60), 'Third request is allowed (at limit)');
 assert_false(checkRateLimit('test_action', 3, 60), 'Fourth request is blocked (over limit)');
 
+// Counted per IP, not per session: a fresh session is still blocked
+$_SESSION = [];
+assert_false(checkRateLimit('test_action', 3, 60), 'A new session does not reset the limit');
+
 // Different action should have its own bucket
 assert_true(checkRateLimit('other_action', 3, 60), 'Different action has separate limit');
 
-// Test window expiry by manipulating timestamps
-$_SESSION['rate_limit_expiry_test'] = [time() - 120, time() - 120, time() - 120];
+$_SERVER['REMOTE_ADDR'] = '192.0.2.2';
+assert_true(checkRateLimit('test_action', 3, 60), 'Another IP has its own limit');
+
+// Test window expiry with old timestamps in the store
+$old = time() - 120;
+file_put_contents($rateFile, json_encode(['expiry_test 192.0.2.2' => [$old, $old, $old]]));
 assert_true(checkRateLimit('expiry_test', 3, 60), 'Expired entries are cleaned up');
+assert_equals(1, count(json_decode(file_get_contents($rateFile), true)['expiry_test 192.0.2.2']), 'Only the live entries are kept');
+@unlink($rateFile);
 
 // ============================================================
 echo "\n=== wakeOnLan() - validation ===\n";

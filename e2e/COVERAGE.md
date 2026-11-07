@@ -124,7 +124,7 @@ Total: **111 items** (45 route × role cells + 66 feature/state rows): **108 ✅
 | CONFIG.SET: config dir not writable (500 + reason, file kept) | ✅ `api.spec.ts › CONFIG.SET › an unwritable config directory: the save says so, nothing changes` |
 | HOST.CHECK: missing / invalid / too long host (500) | ✅ `api.spec.ts › HOST.CHECK › host "": Parameter host not set.`, `… › host "192.0.2.11;id": Invalid host parameter.`, `… › host "aaaaaaaaaaaaaaaaaaaaaaaa": Invalid host parameter.` |
 | HOST.CHECK: a host not in the saved configuration (500) | ✅ `api.spec.ts › HOST.CHECK › a host that is not in the saved configuration is refused` |
-| HOST.CHECK: rate limit 120/min (429), a minute at 1 s within it | ✅ `api.spec.ts › HOST.CHECK › the 121st check within a minute is refused (limit 120)`, `tour.spec.ts › a minute of 1 s status checks stays within the default HOST.CHECK limit` |
+| HOST.CHECK: rate limit 120/min per client IP (429, also from a fresh session), a minute at 1 s within it | ✅ `api.spec.ts › HOST.CHECK › the 121st check within a minute is refused (limit 120), also from a fresh session`, `tour.spec.ts › a minute of 1 s status checks stays within the default HOST.CHECK limit` |
 | HOST.CHECK: reachable host (isUp + port) | ✅ `api.spec.ts › HOST.CHECK › a reachable host: isUp with the open port` |
 | HOST.WAKEUP: bad CSRF token (403) | ✅ `api.spec.ts › HOST.WAKEUP › without a valid CSRF token: refused, nothing sent` |
 | HOST.WAKEUP: CIDR/port out of range | ❌ (c) `tests/test_functions.php` (wakeOnLan: "Rejects CIDR > 32", "Rejects negative CIDR", "Rejects port > 65535"); the page's own form refuses them first (add host rows) |

@@ -46,7 +46,8 @@ trap teardown EXIT
 
 docker build -q -t "$NAME" . >/dev/null
 built=1
-docker run -d --name "$NAME" -p "127.0.0.1:$PORT_BASE:80" "$NAME" >/dev/null
+# The limits count per client IP, and the tour seeds config.json before every shot.
+docker run -d --name "$NAME" -p "127.0.0.1:$PORT_BASE:80" -e WOL_RATE_LIMIT_CONFIG_SET=1000 "$NAME" >/dev/null
 started=1
 # The HEALTHCHECK only runs every 30 s; ask Apache directly.
 for i in $(seq 30); do
