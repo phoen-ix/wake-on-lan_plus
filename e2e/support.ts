@@ -8,7 +8,7 @@ import { HOSTS, NEW_HOST } from './docs/seed'
 
 /* Shared by the docs tour (./docs) and the e2e suite (./tests).
  *
- * The page loads Bootstrap, jQuery, Font Awesome and Google Fonts from CDNs.
+ * The page loads Bootstrap, jQuery UI, Font Awesome and Google Fonts from CDNs.
  * serveCdnLocally() serves the same pinned versions from e2e/node_modules and
  * aborts (and records in `leaked`) every other request that leaves the app. */
 

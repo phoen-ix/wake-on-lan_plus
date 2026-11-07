@@ -555,8 +555,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
         integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy"
         crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"
-        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="assets/vendor/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery-ui-bundle@1.12.1/jquery-ui.min.js"
         integrity="sha256-Pbq2xgNJP86oOUVTdJMo7QWsoY7QYPL0mF5cJ0vj8Xw=" crossorigin="anonymous"></script>
 

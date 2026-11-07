@@ -27,6 +27,8 @@
   `e2e/node_modules`. A request it cannot serve locally fails the test. Bumping a CDN
   version in `index.php` (or the Google Fonts `@import` in `assets/style.css`) needs:
   the new SRI hash, and the same exact version pinned in `e2e/package.json`.
+  jQuery is not from a CDN: `assets/vendor/jquery-<version>.min.js` (the npm package's
+  `dist/jquery.min.js`, unchanged) and its `<script>` tag in `index.php`.
 - The tour's demo hosts use RFC 5737 addresses and `*.example` names, because the "wake"
   shot sends a real magic packet. Keep it that way.
 - `#hostTable` (hidden) is the source of truth: `getConfiguration()` reads its rows and the

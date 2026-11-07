@@ -174,7 +174,7 @@ default of 120 covers two such pages. Checks over the limit fail, and those host
 
   * PHP 8.x with the `sockets` and `mbstring` extensions enabled
   * Apache with `AllowOverride All` (for the `.htaccess` protections)
-  * Internet connection for CDN includes (Bootstrap, jQuery, jQuery UI, Font Awesome, Google Fonts)
+  * Internet connection for CDN includes (Bootstrap, jQuery UI, Font Awesome, Google Fonts); jQuery is in `assets/vendor/`
   * Web server must be allowed to write to `config.json`
 
 ## Installation (Bare Metal)
@@ -314,6 +314,7 @@ includes/
   .htaccess                Blocks direct web access to includes/
 assets/
   app.js                   Client-side JavaScript application
+  vendor/                  jQuery (served by the app, not from a CDN)
   style.css                CSS styles (dark and light themes)
 tests/
   test_functions.php       Unit tests (run: php tests/test_functions.php)

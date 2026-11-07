@@ -12,7 +12,6 @@
     "@playwright/test": "^1.64.1",
     "@popperjs/core": "2.11.8",
     "bootstrap": "5.3.3",
-    "jquery": "3.6.0",
     "jquery-ui-bundle": "1.12.1"
   }
 }

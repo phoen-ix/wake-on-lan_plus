@@ -17,7 +17,7 @@ import { HOSTS, NEW_HOST, seed, type Host } from './seed'
  * the end take no screenshot.
  *
  * Determinism:
- * - The page loads Bootstrap, jQuery, Font Awesome and Google Fonts from CDNs.
+ * - The page loads Bootstrap, jQuery UI, Font Awesome and Google Fonts from CDNs.
  *   The tour serves the same pinned versions from e2e/node_modules and aborts
  *   (and fails on) every other request that leaves the app.
  * - HOST.CHECK is mocked: the demo hosts do not exist. The answers come from
