@@ -288,7 +288,8 @@ test('the .htaccess files apply (no Apache tweaks in the Dockerfile needed)', as
   for (const url of ['/config.json', '/includes/functions.php']) expect((await request.get(url)).status(), url).toBe(403)
 })
 
-test('a minute of 1 s status checks stays within the default HOST.CHECK limit', async ({ request }) => {
+test('a minute of 1 s status checks stays within the default HOST.CHECK limit', async ({ request, baseURL }) => {
+  await seed([{ ...HOSTS[0], host: '127.0.0.1' }], baseURL!)
   // The poller checks one host per tick: up to 60 a minute at the 1 s interval.
   // Real checks (not the mock): the container's own Apache answers on port 80.
   for (let i = 1; i <= 60; i++) {

@@ -37,6 +37,8 @@ for (const { role, url, credentials, allowed } of ROLES) {
 
     for (const { path, type } of GETS) {
       test(`GET ${path}`, async ({ request }) => {
+        // HOST.CHECK checks only the saved hosts.
+        if (allowed && path.includes('HOST.CHECK')) await seedVia(request, [{ ...HOSTS[0], host: '127.0.0.1' }])
         const res = await request.get(path)
         if (allowed) {
           expect(res.status()).toBe(200)

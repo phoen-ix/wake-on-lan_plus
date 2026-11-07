@@ -5,7 +5,7 @@
 #
 #   scripts/e2e.sh [playwright args]          # e.g. -g 'import' --repeat-each=3
 #
-# PORT_BASE (default 25500): the app on 127.0.0.1:PORT_BASE, the same image
+# PORT_BASE (default 25500): the app (WOL_DEBUG=1) on 127.0.0.1:PORT_BASE, the same image
 # with Basic Auth (and WOL_RATE_LIMIT_HOST_WAKEUP=1) on PORT_BASE+1.
 # COMPOSE_PROJECT_NAME (default wake-on-lan_plus_e2e): the image and container
 # name (the auth container gets -auth); only names ending in _docs or _e2e.
@@ -44,7 +44,7 @@ trap teardown EXIT
 
 docker build -q -t "$NAME" . >/dev/null
 built=1
-docker run -d --name "$NAME" -p "127.0.0.1:$PORT_BASE:80" "$NAME" >/dev/null
+docker run -d --name "$NAME" -p "127.0.0.1:$PORT_BASE:80" -e WOL_DEBUG=1 "$NAME" >/dev/null
 started+=("$NAME")
 docker run -d --name "$NAME-auth" -p "127.0.0.1:$((PORT_BASE + 1)):80" \
   -e WOL_USERNAME=e2e-admin -e WOL_PASSWORD=e2e-password-not-secret \

@@ -123,11 +123,12 @@ Total: **111 items** (45 route × role cells + 66 feature/state rows): **108 ✅
 | CONFIG.SET: rate limit 10/min (429) | ✅ `api.spec.ts › CONFIG.SET › the eleventh save within a minute is refused (limit 10)` |
 | CONFIG.SET: config dir not writable (500 + reason, file kept) | ✅ `api.spec.ts › CONFIG.SET › an unwritable config directory: the save says so, nothing changes` |
 | HOST.CHECK: missing / invalid / too long host (500) | ✅ `api.spec.ts › HOST.CHECK › host "": Parameter host not set.`, `… › host "192.0.2.11;id": Invalid host parameter.`, `… › host "aaaaaaaaaaaaaaaaaaaaaaaa": Invalid host parameter.` |
+| HOST.CHECK: a host not in the saved configuration (500) | ✅ `api.spec.ts › HOST.CHECK › a host that is not in the saved configuration is refused` |
 | HOST.CHECK: rate limit 120/min (429), a minute at 1 s within it | ✅ `api.spec.ts › HOST.CHECK › the 121st check within a minute is refused (limit 120)`, `tour.spec.ts › a minute of 1 s status checks stays within the default HOST.CHECK limit` |
 | HOST.CHECK: reachable host (isUp + port) | ✅ `api.spec.ts › HOST.CHECK › a reachable host: isUp with the open port` |
 | HOST.WAKEUP: bad CSRF token (403) | ✅ `api.spec.ts › HOST.WAKEUP › without a valid CSRF token: refused, nothing sent` |
 | HOST.WAKEUP: CIDR/port out of range | ❌ (c) `tests/test_functions.php` (wakeOnLan: "Rejects CIDR > 32", "Rejects negative CIDR", "Rejects port > 65535"); the page's own form refuses them first (add host rows) |
-| `?debug=1` (debug trace in the response) | ✅ `api.spec.ts › HOST.WAKEUP › ?debug=1: the response carries the debug trace` |
+| `?debug=1` (debug trace in the response, only with `WOL_DEBUG=1`) | ✅ `api.spec.ts › HOST.WAKEUP › ?debug=1 (WOL_DEBUG=1): the response carries the debug trace`, `api.spec.ts › the Basic Auth container (WOL_RATE_LIMIT_HOST_WAKEUP=1) › ?debug=1 without WOL_DEBUG=1: no debug trace` |
 | unknown / wrong-method `aop` (500) | ✅ `api.spec.ts › HOST.WAKEUP › unknown or wrong-method operations: "Invalid value for aop!"` |
 | broken `config.json` → error toast | ✅ `api.spec.ts › the config file › a broken config.json: the page says so` |
 | no `config.json` → empty list | ✅ `api.spec.ts › the config file › no config.json yet: an empty list, the empty state` |

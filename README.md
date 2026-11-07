@@ -135,9 +135,10 @@ such pages. Checks over the limit fail, and those hosts show as offline.
     controls have accessible names.
   * **Import/export** of the configuration as JSON, and a download of the saved
     `config.json`.
-  * **Debug trace:** open the page with `?debug=1` and every wake request returns the
-    step-by-step trace (MAC check, broadcast address, socket calls) as `DEBUG` in its JSON
-    response.
+  * **Debug trace:** with `WOL_DEBUG=1` set on the server, open the page with `?debug=1`
+    and every wake request returns the step-by-step trace (MAC check, broadcast address,
+    socket calls) as `DEBUG` in its JSON response. Without `WOL_DEBUG=1`, `?debug=1` is
+    ignored.
 
 <img src="docs/screenshots/hosts-add.png" alt="Add Host dialog with MAC, IP, CIDR, port and comment" width="800">
 
@@ -147,7 +148,7 @@ such pages. Checks over the limit fail, and those hosts show as offline.
   * **CSRF token rotation:** a new token after every successful state-changing operation. It comes back in the JSON response and the JavaScript client picks it up.
   * **Session-based rate limiting** per action, configurable via environment variables (see [Configure Rate Limits](#optional-configure-rate-limits)).
   * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD`.
-  * **SSRF prevention:** an allowlist on the HOST.CHECK `host` parameter (letters, digits, dots, hyphens and colons only; at most 253 characters).
+  * **SSRF prevention:** HOST.CHECK only checks hosts of the saved configuration (a host added on the page shows offline until it is saved), and the `host` parameter allows letters, digits, dots, hyphens and colons only (at most 253 characters).
   * **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`.
   * **Config outside the web root:** the image keeps `config.json` and its backups in `/data` (`WOL_CONFIG_DIR`).
   * **`.htaccess` protections:** they block direct web access to `config.json` (and its temp files and backups, for installs that keep it next to `index.php`), `includes/` and the old monolith file.

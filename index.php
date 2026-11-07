@@ -17,7 +17,8 @@ $configFilename = configFilename();
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 $isSocketExtensionLoaded = intval(extension_loaded("sockets"));
-$isDebugEnabled = intval(safeGet($_GET, "debug", false));
+// ?debug=1 returns server internals (the wake trace): only with WOL_DEBUG=1.
+$isDebugEnabled = getenv('WOL_DEBUG') === '1' ? intval(safeGet($_GET, "debug", false)) : 0;
 $ajaxOperation = safeGet($_POST, "aop", safeGet($_GET, "aop", ""));
 
 // Configurable rate limits via environment variables (with defaults)
@@ -101,6 +102,11 @@ if ("CONFIG.GET" === $ajaxOperation) {
     // Validate host to prevent SSRF: only allow alphanumeric, dots, hyphens, colons (IPv6)
     if (!preg_match('/^[a-zA-Z0-9.\-:]+$/', $host) || strlen($host) > 253) {
         endWithErrorMessage("Invalid host parameter.");
+    }
+    // Only the hosts of the saved configuration: HOST.CHECK is no port scanner.
+    $configJson = file_exists($configFilename) ? json_decode(file_get_contents($configFilename), true) : null;
+    if (!is_array($configJson) || !in_array($host, array_column($configJson, 'host'), true)) {
+        endWithErrorMessage("Unknown host: only hosts of the saved configuration are checked.");
     }
     $responseData = ["error" => false, "isUp" => false];
 

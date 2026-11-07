@@ -6,6 +6,8 @@ import { AUTH, card, expect, HOSTS, inContainer, open, plain, seed, seedVia, ses
 const SET = '/index.php?aop=CONFIG.SET'
 const WAKE = '/index.php?aop=HOST.WAKEUP'
 const CHECK = '/index.php?aop=HOST.CHECK'
+// 127.0.0.1 inside the container: Apache on 80 only, every other port refuses at once.
+const LOCAL = { mac: '02-5E-10-00-00-99', host: '127.0.0.1', cidr: '32', port: '9', comment: 'The container', up: null }
 
 test.describe('CONFIG.SET', () => {
   test('a wrong or reused CSRF token is refused', async ({ baseURL }) => {
@@ -89,15 +91,23 @@ test.describe('HOST.CHECK', () => {
     })
   }
 
+  test('a host that is not in the saved configuration is refused', async ({ baseURL, request }) => {
+    await seed(HOSTS, baseURL!)
+    const res = await request.get(`${CHECK}&host=127.0.0.1`)
+    expect(res.status()).toBe(500)
+    expect(await res.text()).toBe('Internal Server Error! Unknown host: only hosts of the saved configuration are checked.')
+  })
+
   test('the 121st check within a minute is refused (limit 120)', async ({ baseURL }) => {
+    await seed([LOCAL], baseURL!)
     const { api } = await session(baseURL!)
     for (let i = 1; i <= 120; i++) expect((await api.get(`${CHECK}&host=127.0.0.1`)).status(), `check ${i}`).toBe(200)
     expect((await api.get(`${CHECK}&host=127.0.0.1`)).status()).toBe(429)
     await api.dispose()
   })
 
-  test('a reachable host: isUp with the open port', async ({ request }) => {
-    // 127.0.0.1 inside the container: Apache on 80 only, every other port refuses at once.
+  test('a reachable host: isUp with the open port', async ({ baseURL, request }) => {
+    await seed([LOCAL], baseURL!)
     const up = await (await request.get(`${CHECK}&host=127.0.0.1`)).json()
     expect(up).toMatchObject({ error: false, isUp: true, info: '80 (HTTP)' })
   })
@@ -111,7 +121,7 @@ test.describe('HOST.WAKEUP', () => {
     await api.dispose()
   })
 
-  test('?debug=1: the response carries the debug trace', async ({ page, baseURL }) => {
+  test('?debug=1 (WOL_DEBUG=1): the response carries the debug trace', async ({ page, baseURL }) => {
     await open(page, baseURL, { path: '/?debug=1' })
     const res = page.waitForResponse(/aop=HOST\.WAKEUP&debug=1/)
     await card(page, 'Office workstation').getByRole('button', { name: 'Wake' }).click()
@@ -183,6 +193,10 @@ test.describe('the config file', () => {
 
 test.describe('the Basic Auth container (WOL_RATE_LIMIT_HOST_WAKEUP=1)', () => {
   test.use({ baseURL: AUTH.url, httpCredentials: { username: AUTH.username, password: AUTH.password } })
+
+  test('?debug=1 without WOL_DEBUG=1: no debug trace', async ({ request }) => {
+    expect(await (await request.get('/?debug=1')).text()).toContain('"isDebugEnabled":0')
+  })
 
   test('signed in: the page works; the second wake within a minute is refused', async ({ page, request }) => {
     await seedVia(request, HOSTS)

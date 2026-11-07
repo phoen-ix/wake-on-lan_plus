@@ -41,7 +41,7 @@
 - i18n (`miniI18n` data at the end of `assets/app.js`) covers the options menu, the
   Load Configuration dialog text and the Add Host labels only. Every key needs a
   non-empty value in each language: an empty one blanks the element.
-- `scripts/e2e.sh` runs the image twice: `wake-on-lan_plus_e2e` on `127.0.0.1:PORT_BASE` and
+- `scripts/e2e.sh` runs the image twice: `wake-on-lan_plus_e2e` (`WOL_DEBUG=1`) on `127.0.0.1:PORT_BASE` and
   `wake-on-lan_plus_e2e-auth` (Basic Auth `e2e-admin`, `WOL_RATE_LIMIT_HOST_WAKEUP=1`) on
   `PORT_BASE+1`. One Playwright worker: every test replaces the single `config.json`. A few
   tests `docker exec` into the open container (`E2E_CONTAINER`): broken config, entrypoint backups,
