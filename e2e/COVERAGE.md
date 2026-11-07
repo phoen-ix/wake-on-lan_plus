@@ -49,7 +49,7 @@ Total: **111 items** (45 route × role cells + 66 feature/state rows): **108 ✅
 | cards from the saved config, online (open port) / offline, header counts | ✅ `hosts.spec.ts › status › cards show online with the open port, or offline; the header counts them` |
 | status poller, real HOST.CHECK (no mock) | ✅ `hosts.spec.ts › status › a real check: the container itself answers on port 80` |
 | status poller, HOST.CHECK fails → offline | ✅ `hosts.spec.ts › status › a failing check marks the card offline` |
-| card **Wake** button → success toast; twice (CSRF token rotation) | ✅ `hosts.spec.ts › wake › wake two hosts in a row: both packets sent (the CSRF token rotates)` |
+| card **Wake** button → success toast; twice (one CSRF token per session) | ✅ `hosts.spec.ts › wake › wake two hosts in a row: both packets sent (one CSRF token per session)` |
 | wake: server error message in the toast (invalid MAC) | ✅ `tour.spec.ts › a failed wake shows the server message` |
 | wake: unresolvable hostname | ✅ `hosts.spec.ts › wake › an unresolvable hostname shows the server message` |
 | wake: rate limit (5/min) → toast | ✅ `hosts.spec.ts › wake › the sixth wake within a minute is refused (HOST.WAKEUP limit 5)` |
@@ -118,7 +118,8 @@ Total: **111 items** (45 route × role cells + 66 feature/state rows): **108 ✅
 
 | Feature / state | Test |
 |---|---|
-| CONFIG.SET: wrong / reused CSRF token (403), rotated token works | ✅ `api.spec.ts › CONFIG.SET › a wrong or reused CSRF token is refused` |
+| CONFIG.SET: wrong / another session's CSRF token (403), the session's token stays valid | ✅ `api.spec.ts › CONFIG.SET › one CSRF token per session: a wrong one or another session's is refused` |
+| HOST.WAKEUP: parallel wakes with one token | ✅ `api.spec.ts › HOST.WAKEUP › parallel wakes with the session's token: all sent` |
 | CONFIG.SET: broken JSON / not a list / entry without host (500 + reason, file kept) | ✅ `api.spec.ts › CONFIG.SET › broken JSON is refused …`, `not a list …`, `an entry without host …` |
 | CONFIG.SET: rate limit 10/min (429) | ✅ `api.spec.ts › CONFIG.SET › the eleventh save within a minute is refused (limit 10)` |
 | CONFIG.SET: config dir not writable (500 + reason, file kept) | ✅ `api.spec.ts › CONFIG.SET › an unwritable config directory: the save says so, nothing changes` |

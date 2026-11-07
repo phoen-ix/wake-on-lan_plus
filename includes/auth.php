@@ -32,18 +32,6 @@ function validateCsrfToken($token)
 }
 
 /**
- * Rotate the CSRF token by clearing and regenerating it.
- * Should be called after successful state-changing operations.
- *
- * @return string The new CSRF token
- */
-function rotateCsrfToken()
-{
-    unset($_SESSION['csrf_token']);
-    return generateCsrfToken();
-}
-
-/**
  * Basic Authentication via environment variables.
  * Set WOL_USERNAME and WOL_PASSWORD to enable.
  */
@@ -64,4 +52,9 @@ if ($wolUsername && $wolPassword) {
     }
 }
 
+// One token per session, never rotated: parallel requests (several wakes at
+// once) all carry the same one.
 $csrfToken = generateCsrfToken();
+// Nothing below writes the session: release its lock so a client's parallel
+// requests (slow host checks) do not queue behind each other.
+session_write_close();

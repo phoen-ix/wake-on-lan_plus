@@ -78,8 +78,7 @@ if ("CONFIG.GET" === $ajaxOperation) {
         @unlink($tmpFile);
         endWithErrorMessage("Cannot write configuration file. Please make sure the web server can write to the folder.");
     }
-    $newToken = rotateCsrfToken();
-    endWithJsonResponse(["status" => "OK", "csrfToken" => $newToken]);
+    endWithJsonResponse(["status" => "OK"]);
 } elseif ("CONFIG.DOWNLOAD" === $ajaxOperation) {
     $jsonData = [];
     if (file_exists($configFilename)) {
@@ -161,12 +160,10 @@ if ("CONFIG.GET" === $ajaxOperation) {
         $responseData["DEBUG"] = $debugOut;
     }
 
-    $newToken = rotateCsrfToken();
     if ($MESSAGE) {
         endWithErrorMessage($MESSAGE);
     } else {
         $responseData["info"] = "Magic packet has been sent for <strong>" . htmlspecialchars($mac, ENT_QUOTES, 'UTF-8') . "</strong>. Please wait for the host to come up...";
-        $responseData["csrfToken"] = $newToken;
         endWithJsonResponse($responseData);
     }
 } else {

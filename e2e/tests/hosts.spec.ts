@@ -50,7 +50,7 @@ test.describe('status', () => {
 })
 
 test.describe('wake', () => {
-  test('wake two hosts in a row: both packets sent (the CSRF token rotates)', async ({ page, baseURL }) => {
+  test('wake two hosts in a row: both packets sent (one CSRF token per session)', async ({ page, baseURL }) => {
     await open(page, baseURL)
     for (const h of HOSTS.slice(0, 2)) {
       await card(page, h.comment).getByRole('button', { name: 'Wake' }).click()

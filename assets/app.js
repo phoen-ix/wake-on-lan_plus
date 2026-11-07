@@ -604,7 +604,6 @@ $(function () {
                     if ('string' == typeof resp) {
                         showToast(resp, 'danger');
                     } else {
-                        if (resp.csrfToken) csrfToken = resp.csrfToken;
                         makeClean();
                         showToast($('#textConfigSavedSuccessfully').html(), 'success');
                     }
@@ -874,7 +873,6 @@ $(function () {
                 if ('string' == typeof resp) {
                     showToast(resp, 'danger');
                 } else {
-                    if (resp.csrfToken) csrfToken = resp.csrfToken;
                     showToast(resp['info'], 'success');
                 }
             }

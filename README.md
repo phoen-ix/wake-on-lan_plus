@@ -146,7 +146,7 @@ default of 120 covers two such pages. Checks over the limit fail, and those host
 ### Security
 
   * **CSRF protection** on all state-changing operations (CONFIG.SET, HOST.WAKEUP) via the `X-CSRF-TOKEN` header.
-  * **CSRF token rotation:** a new token after every successful state-changing operation. It comes back in the JSON response and the JavaScript client picks it up.
+  * **One CSRF token per session**, so parallel requests (several wakes at once) all pass.
   * **Rate limiting per client IP** and action (a client without a session cookie still counts), configurable via environment variables (see [Configure Rate Limits](#optional-configure-rate-limits)).
   * **Optional HTTP Basic Authentication** via `WOL_USERNAME` and `WOL_PASSWORD`.
   * **SSRF prevention:** HOST.CHECK only checks hosts of the saved configuration (a host added on the page shows offline until it is saved), and the `host` parameter allows letters, digits, dots, hyphens and colons only (at most 253 characters).
@@ -309,7 +309,7 @@ and the Add Host form labels only; the rest of the page stays in English.
 ```
 index.php                  Main entry point (AJAX routing + HTML UI)
 includes/
-  auth.php                 Authentication, CSRF tokens & token rotation
+  auth.php                 Authentication, CSRF token
   functions.php            Core WoL functions & utilities
   .htaccess                Blocks direct web access to includes/
 assets/

@@ -12,17 +12,17 @@ const CHECK = '/index.php?aop=HOST.CHECK'
 const LOCAL = { mac: '02-5E-10-00-00-99', host: '127.0.0.1', cidr: '32', port: '9', comment: 'The container', up: null }
 
 test.describe('CONFIG.SET', () => {
-  test('a wrong or reused CSRF token is refused', async ({ baseURL }) => {
+  test('one CSRF token per session: a wrong one or another session\'s is refused', async ({ baseURL }) => {
     const { api, token } = await session(baseURL!)
     expect((await api.post(SET, { headers: { 'X-CSRF-TOKEN': 'f'.repeat(64) }, data: [] })).status()).toBe(403)
-    const ok = await api.post(SET, { headers: { 'X-CSRF-TOKEN': token }, data: plain(HOSTS) })
-    expect(ok.status()).toBe(200)
-    const { csrfToken } = await ok.json()
-    expect(csrfToken).toMatch(/^[0-9a-f]{64}$/)
-    const reused = await api.post(SET, { headers: { 'X-CSRF-TOKEN': token }, data: [] })
-    expect(reused.status()).toBe(403)
-    expect(await reused.text()).toBe('CSRF token validation failed.')
-    expect((await api.post(SET, { headers: { 'X-CSRF-TOKEN': csrfToken }, data: [] })).status()).toBe(200)
+    expect((await api.post(SET, { headers: { 'X-CSRF-TOKEN': token }, data: plain(HOSTS) })).status()).toBe(200)
+    // Not rotated: the same token works again.
+    expect((await api.post(SET, { headers: { 'X-CSRF-TOKEN': token }, data: plain(HOSTS) })).status()).toBe(200)
+    const other = await session(baseURL!)
+    const foreign = await other.api.post(SET, { headers: { 'X-CSRF-TOKEN': token }, data: [] })
+    expect(foreign.status()).toBe(403)
+    expect(await foreign.text()).toBe('CSRF token validation failed.')
+    await other.api.dispose()
     await api.dispose()
   })
 
@@ -124,6 +124,14 @@ test.describe('HOST.WAKEUP', () => {
     const { api } = await session(baseURL!)
     const res = await api.post(WAKE, { headers: { 'X-CSRF-TOKEN': 'nope' }, data: plain(HOSTS)[0] })
     expect(res.status()).toBe(403)
+    await api.dispose()
+  })
+
+  test('parallel wakes with the session\'s token: all sent', async ({ baseURL }) => {
+    await seed(HOSTS, baseURL!)
+    const { api, token } = await session(baseURL!)
+    const res = await Promise.all(plain(HOSTS).slice(0, 3).map((h) => api.post(WAKE, { headers: { 'X-CSRF-TOKEN': token }, data: h })))
+    expect(res.map((r) => r.status())).toEqual([200, 200, 200])
     await api.dispose()
   })
 
