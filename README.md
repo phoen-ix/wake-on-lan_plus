@@ -15,7 +15,7 @@ This is a security-hardened, modular rewrite of the 2024 release.
 **Every screen: [the screenshot gallery](docs/screenshots/README.md).** The host grid
 [in the light theme](docs/screenshots/hosts-grid.light.png) and [on a phone](docs/screenshots/hosts-grid.mobile.png).
 
-**Contents:** [Quick Start](#quick-start-docker-compose) · [Features](#features) · [Bare Metal](#requirements-bare-metal) · [Usage](#usage) · [Configuration Format](#configuration-format) · [Languages](#internationalization) · [Project Structure](#project-structure) · [Screenshots](#screenshots) · [E2E tests](#e2e-tests) · [License](#license)
+**Contents:** [Quick Start](#quick-start-docker-compose) · [Features](#features) · [Bare Metal](#requirements-bare-metal) · [Usage](#usage) · [Configuration Format](#configuration-format) · [Languages](#internationalization) · [Project Structure](#project-structure) · [Screenshots](#screenshots) · [E2E tests](#e2e-tests) · [Roadmap](#roadmap) · [License](#license)
 
 ## Quick Start (Docker Compose)
 
@@ -152,7 +152,7 @@ default of 120 covers two such pages. Checks over the limit fail, and those host
   * **SSRF prevention:** HOST.CHECK only checks hosts of the saved configuration (a host added on the page shows offline until it is saved), and the `host` parameter allows letters, digits, dots, hyphens and colons only (at most 253 characters).
   * **Security headers:** `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`.
   * **Config outside the web root:** the image keeps `config.json` and its backups in `/data` (`WOL_CONFIG_DIR`).
-  * **`.htaccess` protections:** they block direct web access to `config.json` (and its temp files and backups, for installs that keep it next to `index.php`), `includes/` and the old monolith file.
+  * **`.htaccess` protections:** they block direct web access to `config.json` (and its temp files and backups, for installs that keep it next to `index.php`), `includes/` and a leftover copy of the old single-file app (`wake-on-lan_plus.php`).
   * **Escaped host values:** quotes and HTML in a comment or other host field show as text and never run.
   * **Timing-safe comparisons** via `hash_equals()` for tokens and credentials.
   * **JSON structure validation** on configuration saves and imports.
@@ -326,10 +326,7 @@ Dockerfile                 Docker image definition (with HEALTHCHECK)
 docker-compose.yml         Docker Compose orchestration (pulls the GHCR image)
 entrypoint.sh              Docker entrypoint script (config dir + backup)
 example.env                Environment variable template
-.htaccess                  Protects config.json and the legacy file
-wake-on-lan_plus.php       The original single-file app (legacy; not in the image, blocked by .htaccess)
-IMPROVEMENTS.md            Future improvements roadmap
-HANDOVER.md                Developer handover document
+.htaccess                  Protects config.json (and a leftover wake-on-lan_plus.php)
 ```
 
 ---
@@ -370,6 +367,27 @@ scripts/e2e.sh                         # extra arguments go to Playwright, e.g. 
   * **Magic packet:** a UDP sink inside the container checks the bytes a wake sends
     (6 × `FF`, then the MAC 16 times).
   * **CI:** the `e2e` job in `ci.yml`.
+
+---
+
+## Roadmap
+
+Open ideas, none scheduled:
+
+  * **Security:** pre-hashed `WOL_PASSWORD` (`password_verify()`); session cookie flags
+    (`HttpOnly`, `SameSite=Strict`, `Secure` behind HTTPS); a `Permissions-Policy` header.
+  * **Code:** PHP type declarations; PHPStan or Psalm in CI; a route table instead of the
+    `if/elseif` chain in `index.php`; errors logged to stderr before the response.
+  * **Features:** host groups/tags with bulk wake; scheduled wakes; configurable check
+    ports (today the fixed list above); pushed status instead of polling; per-user host
+    lists.
+  * **Docker:** a non-root container (Apache on a high port); `read_only: true` with only
+    `/data` and `/tmp` writable; a compose-level healthcheck.
+  * **Tests:** PHPUnit instead of `tests/test_functions.php`, with coverage.
+  * **Ops:** a Prometheus `/metrics` endpoint; an access log of saves and wakes (time, IP);
+    config backups on a schedule, not only on container start.
+  * **UX:** keyboard shortcuts (save, add host); a skip-to-content link, modal focus and a
+    contrast check in both themes; PWA manifest and offline cache.
 
 ---
 

@@ -1,4 +1,28 @@
-@HANDOVER.md
+# wake-on-lan_plus
+
+PHP single page (no framework, no database) that sends Wake-on-LAN magic packets; the
+hosts live in `config.json`. User docs: `README.md` (features, env vars, layout, roadmap).
+
+## Architecture
+
+- `index.php`: the AJAX operations (`?aop=`), then the HTML. CONFIG.GET / CONFIG.DOWNLOAD
+  read `config.json`; CONFIG.SET (POST, CSRF, rate limit) validates an array of objects
+  with `mac` + `host` and writes it atomically (temp file + `rename()`); HOST.CHECK (rate
+  limit, saved hosts only) tries ports 3389/22/80/443/5938 with `fsockopen`, 3 s each;
+  HOST.WAKEUP (POST, CSRF, rate limit) sends the packet via `wakeOnLan()`.
+  New operation: one more `elseif`, with CSRF + `checkRateLimit()` if it changes state,
+  and its client call in `assets/app.js`.
+- `includes/auth.php`: session, Basic Auth (`WOL_USERNAME`/`WOL_PASSWORD`, `hash_equals`),
+  the per-session CSRF token (`X-CSRF-TOKEN` header), then `session_write_close()`.
+- `includes/functions.php`: `wakeOnLan()`, `checkRateLimit()`, `configFilename()`,
+  `endWithJsonResponse()` / `endWithErrorMessage()`.
+- `assets/app.js`: mini-i18n, the bootstrapChoice jQuery plugin, `WolSettings`
+  (`localStorage` key `wol_settings`; defaults when it is unavailable), the cards, the
+  status poller (one host per tick), toasts.
+- No CSP header on purpose: the inline `window.WOL_CONFIG` bridge and the template
+  engine's `new Function()` would need `unsafe-inline` + `unsafe-eval`.
+- CI (`ci.yml`) publishes `ghcr.io/phoen-ix/wake-on-lan_plus` (amd64 + arm64) after the
+  `test` job: `latest` + `sha-<short>` from `master`, `X.Y.Z` from a `vX.Y.Z` tag.
 
 ## Commands
 
@@ -38,8 +62,6 @@
   `./volume/config/` in compose), never in the web root. Never mount anything over
   `/var/www/html`: it hides `.htaccess` (`tests/test_functions.php` checks
   `docker-compose.yml`).
-- `wake-on-lan_plus.php` is the pre-rewrite monolith: not in the image, blocked by
-  `.htaccess`. Do not edit it; deleting it is the owner's call.
 - i18n (`miniI18n` data at the end of `assets/app.js`) covers the options menu, the
   Load Configuration dialog text and the Add Host labels only. Every key needs a
   non-empty value in each language: an empty one blanks the element.

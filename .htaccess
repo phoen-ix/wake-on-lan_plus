@@ -9,7 +9,8 @@
     </IfModule>
 </FilesMatch>
 
-# Protect the old monolith file from direct access (use index.php instead)
+# The old monolith (gone from the repo): still blocked for bare-metal installs
+# that kept a copy from before the rewrite
 <FilesMatch "wake-on-lan_plus\.php$">
     <IfModule mod_authz_core.c>
         Require all denied
